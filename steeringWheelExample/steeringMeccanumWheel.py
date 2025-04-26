@@ -56,6 +56,7 @@ trueSpeed_FR = deltaIncRad / dt_FR * iEngine
 trueSpeed_BL = deltaIncRad / dt_BL * iEngine
 trueSpeed_BR = deltaIncRad / dt_BR * iEngine
 timestart = time.time()
+last_time = timestart
 
 run = True
 distFL = np.array([])
@@ -99,12 +100,16 @@ while run == True:
         f'True Speed BR: {trueSpeed_BR:.3f}, Target: {wheel_speeds[3, 0]:.3f}')
     print()
 
-    """if all(abs(trueSpeed - wheel_speeds[i, 0]) < 0.002 for i, trueSpeed
-           in enumerate([trueSpeed_FL, trueSpeed_FR, trueSpeed_BL,
-                         trueSpeed_BR])):
+    current_time = time.time()
+    delta = current_time - timestart
+
+    if current_time - 2 >= last_time:
+        last_time = current_time
+        """
         dx += 0.01
         dy += 0.01
-        rot += 0.01
+        rot += 0.00
+        """
 
         # Calculate the target wheel speed
         wheel_speeds = mecanum_inv_kinematics(dx, dy, rot, r, L, W)
@@ -115,45 +120,74 @@ while run == True:
         dt_BR_soll = deltaIncRad * iEngine / wheel_speeds[3, 0]
 
         # Adjusted PID controllers for smoother response
-        pid_FL = PID(0.5, 0.1, 0.02, setpoint=dt_FL_soll)
-        pid_FR = PID(0.5, 0.1, 0.02, setpoint=dt_FR_soll)
-        pid_BL = PID(0.5, 0.1, 0.02, setpoint=dt_BL_soll)
-        pid_BR = PID(0.5, 0.1, 0.02, setpoint=dt_BR_soll)"""
+        pid_FL.setpoint = dt_FL_soll
+        pid_FR.setpoint = dt_FR_soll
+        pid_BL.setpoint = dt_BL_soll
+        pid_BR.setpoint = dt_BR_soll
 
-    current_time = time.time()
-    delta = current_time - timestart
-
-    if (current_time - timestart) > 20:
+    if (current_time - timestart) > 50:
         run = False
 
-    distFL = np.append(distFL, trueSpeed_FL*delta)
-    distFR = np.append(distFR, trueSpeed_FR*delta)
-    distBL = np.append(distBL, trueSpeed_BL*delta)
-    distBR = np.append(distBR, trueSpeed_BR*delta)
-    realdistFL = np.append(realdistFL, wheel_speeds[0, 0]*delta)
-    realdistFR = np.append(realdistFR, wheel_speeds[1, 0]*delta)
-    realdistBL = np.append(realdistBL, wheel_speeds[2, 0]*delta)
-    realdistBR = np.append(realdistBR, wheel_speeds[3, 0]*delta)
+    distFL = np.append(distFL, trueSpeed_FL)
+    distFR = np.append(distFR, trueSpeed_FR)
+    distBL = np.append(distBL, trueSpeed_BL)
+    distBR = np.append(distBR, trueSpeed_BR)
+    realdistFL = np.append(realdistFL, wheel_speeds[0, 0])
+    realdistFR = np.append(realdistFR, wheel_speeds[1, 0])
+    realdistBL = np.append(realdistBL, wheel_speeds[2, 0])
+    realdistBR = np.append(realdistBR, wheel_speeds[3, 0])
     passedTime = np.append(passedTime, delta)
 
     # Delay for simulation
     time.sleep(0.03)
 
-# Plotting the distances for each wheel over time
-plt.figure(figsize=(10, 6))
-plt.plot(passedTime, distFL, label="Front Left Wheel")
-plt.plot(passedTime, distFR, label="Front Right Wheel")
-plt.plot(passedTime, distBL, label="Back Left Wheel")
-plt.plot(passedTime, distBR, label="Back Right Wheel")
-plt.plot(passedTime, realdistFL, label="real Front Left Wheel")
-plt.plot(passedTime, realdistFR, label="real Front Right Wheel")
-plt.plot(passedTime, realdistBL, label="real Back Left Wheel")
-plt.plot(passedTime, realdistBR, label="real Back Right Wheel")
-plt.xscale('log')
-plt.yscale('log')
-plt.xlabel('Time (s)')
-plt.ylabel('Distance (m)')
-plt.title('Distance Traveled by Each Wheel Over Time')
-plt.legend()
-plt.grid(True)
+# Subplot erstellen
+fig, axs = plt.subplots(2, 2, figsize=(14, 10))
+
+# Plot für Front Left Wheel und Geschwindigkeit
+axs[0, 0].plot(passedTime, distFL, label="Front Left Wheel")
+axs[0, 0].plot(passedTime, realdistFL, label="Real Front Left", linestyle='--')
+axs[0, 0].set_xlabel('Time (s)')
+axs[0, 0].set_ylabel('Distance (m) / Speed (m/s)')
+axs[0, 0].set_title('Front Left Wheel')
+axs[0, 0].legend()
+axs[0, 0].grid(True)
+# axs[0, 0].set_xscale('log')  # Logarithmische x-Achse
+# axs[0, 0].set_yscale('log')  # Logarithmische y-Achse
+
+# Plot für Front Right Wheel und Geschwindigkeit
+axs[0, 1].plot(passedTime, distFR, label="Front Right Wheel")
+axs[0, 1].plot(passedTime, realdistFR,
+               label="Real Front Right", linestyle='--')
+axs[0, 1].set_xlabel('Time (s)')
+axs[0, 1].set_ylabel('Distance (m) / Speed (m/s)')
+axs[0, 1].set_title('Front Right Wheel')
+axs[0, 1].legend()
+axs[0, 1].grid(True)
+# axs[0, 1].set_xscale('log')  # Logarithmische x-Achse
+# axs[0, 1].set_yscale('log')  # Logarithmische y-Achse
+
+# Plot für Back Left Wheel und Geschwindigkeit
+axs[1, 0].plot(passedTime, distBL, label="Back Left Wheel")
+axs[1, 0].plot(passedTime, realdistBL, label="Real Back Left", linestyle='--')
+axs[1, 0].set_xlabel('Time (s)')
+axs[1, 0].set_ylabel('Distance (m) / Speed (m/s)')
+axs[1, 0].set_title('Back Left Wheel')
+axs[1, 0].legend()
+axs[1, 0].grid(True)
+# axs[1, 0].set_xscale('log')  # Logarithmische x-Achse
+# axs[1, 0].set_yscale('log')  # Logarithmische y-Achse
+
+# Plot für Back Right Wheel und Geschwindigkeit
+axs[1, 1].plot(passedTime, distBR, label="Back Right Wheel")
+axs[1, 1].plot(passedTime, realdistBR, label="Real Back Right", linestyle='--')
+axs[1, 1].set_xlabel('Time (s)')
+axs[1, 1].set_ylabel('Distance (m) / Speed (m/s)')
+axs[1, 1].set_title('Back Right Wheel')
+axs[1, 1].legend()
+axs[1, 1].grid(True)
+# axs[1, 1].set_xscale('log')  # Logarithmische x-Achse
+# axs[1, 1].set_yscale('log')  # Logarithmische y-Achse
+
+plt.tight_layout()
 plt.show()
