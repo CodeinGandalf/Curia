@@ -4,6 +4,11 @@ Created on Wed Apr 30 13:46:31 2025
 
 @author: Fuuli_FH_Pfloeck_wo_programiered!; Sagitarius A*
 """
+import numpy as np
+import LIDAR_fake_data
+import searchCan
+import searchCanCam
+import inversKinematics
 
 
 def collectLidarData():
@@ -18,31 +23,20 @@ def collectLidarData():
     ...
 
 
-def startMapping():
+def startMapping(lidarData):
     """
     Take the LIDAR data and caluclate the mapping onto it.
     """
     ...
 
 
-def searchCan():
-    """
-    Get the LIDAR data and search for potential cans. If there is no can
-    let the variable for the pose be False.
-    """
-    # Define the pose of the can as false:
-    posCan = False
-    ...
-
-    # Return the pose of the can:
-    return posCan
-
-
-def correctRot():
+def correctRot(dx, dy, rot):
     """
     Meassure the rotation around the z axis from the current pose of the robot
     to the pose of the can and correct the rotation of it.
     """
+    # Calculate the target wheel speed
+    wheel_speeds = inversKinematics.mecanum_inv_kinematics(dx, dy, rot)
     ...
 
 
@@ -55,11 +49,15 @@ def driveToCan():
     ...
 
 
-def checkIfCan():
+def checkIfCan(posCan, camera_index):
     """
     Check if both sensors see the can. If not let the bool for isCan at False
     and drive back. Otherwise start the algorithem to collect it.
     """
+
+    center_x, center_y, canDetected = searchCanCam.find_best_can(
+        posCan, camera_index)
+
     # Set the isCan bool to false and update it if there is a can in the data:
     isCan = False
 
@@ -127,7 +125,7 @@ def driveBack(can):
     """
     ...
     # If there is a can, lower the gripper and open it to release the can:
-    if can:
+    if can is True:
         lowerCan()
         openGripper()
         setBack()
@@ -147,25 +145,38 @@ def setBack():
 
 # Start the file if it's called as main file:
 if __name__ == "__main__":
+    # Get the fake LIDAR data that the LIDAR hasn't be running all the time:
+    lidarData = LIDAR_fake_data.fake_data()
+
     # Start to collect the LIDAR data:
-    collectLidarData()
+    # lidarData = collectLidarData()
 
     # Calculate the map based upon the LIDAR data:
-    startMapping()
+    startMapping(lidarData)
+
+    posCan = False
+    isCan = False
 
     # Search for the pose of the potentional cans:
-    posCan = searchCan()
+    posCan = searchCan.searchCan(lidarData)
+    camera_index = 0
+    print(posCan)
 
     # Check if there are any cans in the LIDAR data:
     if posCan is not False:
+        # Test values for the function:
+        dx = 0.
+        dy = 0.
+        rot = 0.1
+
         # First correct the rotation around the z axis:
-        correctRot()
+        correctRot(dx, dy, rot)
 
         # Drive the robot to the can (linear movement):
         driveToCan()
 
         # Check if there is a can based upon the LIDAR and cam data:
-        isCan, offset = checkIfCan()
+        isCan, offset = checkIfCan(posCan, camera_index)
 
     # If there is a can, then collect it:
     if isCan:
@@ -178,4 +189,4 @@ if __name__ == "__main__":
 
     else:
         # If there is no can, drive back to the home position:
-        driveBack()
+        driveBack(can=False)
