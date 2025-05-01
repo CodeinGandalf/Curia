@@ -1,11 +1,15 @@
 # -*- coding: utf-8 -*-
 """
-Created on Thu May  1 12:22:21 2025
+Created on Wed Apr 30 13:46:31 2025
 
-@author: Fuuli_FH_Pfloeck_wo_programiered!; Sagitarius A*
+@author: Project Curia
 """
 
 
 def driveToCan(dx, dy):
-    print("Hello from drive to can")
+    """
+    Drive the robot onto an linear path to the targeted position. Control
+    the position in this part of the code with the data from the LIDAR to
+    handle the drift from the engines.
+    """
     ...

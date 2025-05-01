@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 """
-Created on Wed Apr 30 17:21:25 2025
+Created on Wed Apr 30 13:46:31 2025
 
-@author: Fuuli_FH_Pfloeck_wo_programiered!; Sagitarius A*
+@author: Project Curia
 """
+
 import numpy as np
 
 

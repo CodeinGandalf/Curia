@@ -153,4 +153,4 @@ def find_best_can(camera_index):
 
 # Start the file if it's called as main file:
 if __name__ == "__main__":
-    find_best_can(camera_index=0)
+    find_best_can(camera_index=1)

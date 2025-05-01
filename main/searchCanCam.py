@@ -1,3 +1,10 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Wed Apr 30 13:46:31 2025
+
+@author: Project Curia
+"""
+
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
@@ -168,16 +175,16 @@ def find_best_can(poseCan, camera_index, offsetCam, offsetLidar):
                 print(f"Center=({x_b+w_b//2}, {y_b+h_b//2}), width={w_b}, hight={h_b},\
                       ratio={h_b/w_b:.2f}, probability score={best_score:.3f}")
 
-        if i < 200:
+        if i < 100:
             i += 1
-        elif i >= 200:
-            print("Reached target 200")
+        elif i >= 100:
+            print("Reached target 100")
             if x_b is not None:
                 break
             else:
                 cap.release()
                 cv2.destroyAllWindows()
-                cv2.waitKey(1)
+                cv2.waitKey(2)
 
                 return False, False, False
 

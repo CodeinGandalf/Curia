@@ -1,34 +1,34 @@
 # -*- coding: utf-8 -*-
 """
-Created on Wed Apr 30 23:29:56 2025
+Created on Wed Apr 30 13:46:31 2025
 
-@author: Fuuli_FH_Pfloeck_wo_programiered!; Sagitarius A*
+@author: Project Curia
 """
 
-import searchCanCam
 import numpy as np
+
+import searchCanCam
 
 
 def checkIfCan(posCan, camera_index, offsetCam, offsetLidar):
-    """
-    Check if both sensors see the can. If not let the bool for isCan at False
-    and drive back. Otherwise start the algorithem to collect it.
-    """
-
+    # Use the LIDAR data and search for the can in the picture:
     center_x, center_y, canDetected = searchCanCam.find_best_can(
         posCan, camera_index, offsetCam, offsetLidar)
 
-    print(canDetected)
-    print(center_x)
+    print(f'Can detected? => {canDetected}')
+    print(f'Center x {center_x}')
 
-    # Start with an offset of 0:
+    # Calculate the offset between the LIDAR data and the cam:
     if center_x is not False and canDetected is not False:
+        # Define the variables for the camera model:
         cx = 640/2
         Z = posCan[0][0]*np.sin(posCan[0][1])
         fx = 4
 
+        # Calculate the center from the camera picture:
         X_center = (center_x - cx)*Z/fx + offsetCam
 
+        # Calculate the offset from the locations in the data sets:
         offset = X_center - (posCan[0][0]*np.cos(posCan[0][1]) - offsetLidar)
     else:
         offset = False
