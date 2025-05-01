@@ -53,8 +53,8 @@ def searchCan(lidarData, can_diameter=67, tolerance=20):
 
         if abs(arc_length - expected_arc) < tolerance:
             center_idx = int((start_idx + end_idx) / 2)
-            center_angle = np.angle(
-                np.exp(1j * start_angle) + np.exp(1j * end_angle))
+            center_angle = np.angle(np.exp(1j * start_angle) +
+                                    np.exp(1j * end_angle))
             center_distance = distances[center_idx]
             posCan.append((center_distance, center_angle))
 

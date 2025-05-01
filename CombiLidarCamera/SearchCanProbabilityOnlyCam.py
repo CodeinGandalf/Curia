@@ -23,7 +23,7 @@ def find_best_can(camera_index):
 
     # Expected ratio for the can is 2.51 with a tolerance of 10%:
     expected_aspect_ratio = 2.51
-    tolerance = 0.1
+    tolerance = 0.2
 
     # Position fake LIDAR Data placed into the middle of the camera chip:
     lidar_mu_x = 640 // 2
@@ -122,7 +122,7 @@ def find_best_can(camera_index):
                         score = probability_map[int(center_y), int(center_x)]
 
                         # Control if this target is better then the current best option:
-                        if score > best_score and score > 0.5:
+                        if score > best_score and score > 0.0:
                             best_contour = (x, y, w, h)
                             best_score = score
 
