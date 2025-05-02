@@ -8,6 +8,7 @@ Created on Wed Apr 30 13:46:31 2025
 import numpy as np
 import matplotlib.pyplot as plt
 import time
+import rospy
 
 import inversKinematics as iK
 import updatePWM as PWM
@@ -19,6 +20,7 @@ def correctRot(posCan):
     Meassure the rotation around the z axis from the current pose of the robot
     to the pose of the can and correct the rotation of it.
     """
+    rospy.loginfo("Hello from correctRot")
 
     # Parameter for the controller:
     Kp = 0.7
