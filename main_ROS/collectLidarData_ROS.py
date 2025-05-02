@@ -5,6 +5,8 @@ Created on Wed Apr 30 13:46:31 2025
 @author: Project Curia
 """
 
+import rospy
+
 
 def collectLidarData():
     """
@@ -17,4 +19,5 @@ def collectLidarData():
     """
     ...
     lidarData = None
+    rospy.loginfo("Hello from collectLidarData")
     return lidarData
