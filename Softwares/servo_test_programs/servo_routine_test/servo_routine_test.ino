@@ -1,6 +1,3 @@
-
-
-
 #include <Servo.h>
 
 Servo lift;
@@ -8,8 +5,8 @@ Servo myservo;
 
 //Servo nicht einfach so auseinandersvhrauben!!! (ansonsten Ryoya Bauer fragen)
 
-int unten = 2000;
-int oben = 1000;
+int unten = 2325;
+int oben = 1100;
 
 int mitte = 1500;
 int geschlossen = 1080;
