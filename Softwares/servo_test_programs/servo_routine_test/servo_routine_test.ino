@@ -5,7 +5,7 @@ Servo myservo;
 
 //Servo nicht einfach so auseinandersvhrauben!!! (ansonsten Ryoya Bauer fragen)
 
-int unten = 2325;
+int unten = 2500;
 int oben = 1100;
 
 int mitte = 1500;
@@ -15,12 +15,13 @@ int offen = 1650;
 
 void setup() {
   lift.attach(10);                 // Servo an Pin 10
-  lift.writeMicroseconds(oben);  // Anschlag ganz unten
+  lift.writeMicroseconds(oben);  // Anschlag ganz oben
 
   myservo.attach(9);                 // Servo an Pin 9
   myservo.writeMicroseconds(offen);  // Anschlag ganz links
 
   delay(1500);
+
 }
 
 void loop() {
