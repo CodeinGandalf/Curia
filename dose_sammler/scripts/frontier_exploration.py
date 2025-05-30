@@ -16,11 +16,11 @@ from tf import TransformListener
 from tf.transformations import euler_from_quaternion
 
 class FrontierExploration:
-def **init**(self):
-"""
-Class constructor
-"""
-rospy.init_node("frontier_exploration")
+    def __init__(self):
+        """
+        Class constructor
+        """
+        rospy.init_node("frontier_exploration")
 
         # Set if in debug mode
         self.is_in_debug_mode = (
@@ -276,5 +276,5 @@ rospy.init_node("frontier_exploration")
 
             rate.sleep()
 
-if **name** == "**main**":
-FrontierExploration().run()
+if __name__ == "__main__":
+    FrontierExploration().run()
