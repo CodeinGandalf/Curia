@@ -5,9 +5,14 @@ Created on Wed Apr 30 13:46:31 2025
 @author: Project Curia
 """
 
-import rospy
+#import rospy
 
 
 def updatePWM(wheel_speeds):
-    rospy.loginfo("Hello from updatePWM")
+    print("Say gex")
+    #rospy.loginfo("Hello from updatePWM")
     ...
+
+print("smd")
+wheel_speeds = 0
+updatePWM(wheel_speeds)

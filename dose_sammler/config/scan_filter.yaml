@@ -1,0 +1,6 @@
+scan_filter_chain:
+  - name: ignore_saeule
+    type: laser_filters/LaserScanAngularBoundsFilter
+    params:
+      lower_angle: -3.1416
+      upper_angle: -1.5708
