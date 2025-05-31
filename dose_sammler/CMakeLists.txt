@@ -6,6 +6,8 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   std_msgs
   sensor_msgs
+  geometry_msgs
+  nav_msgs
 )
 
 ## Declare catkin package
@@ -16,6 +18,8 @@ catkin_install_python(PROGRAMS
   scripts/main.py
   scripts/keyboard_control.py
   scripts/encoder_odometry.py
+  scripts/frontier_exploration.py
+  scrpts/pure_pursuit.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
