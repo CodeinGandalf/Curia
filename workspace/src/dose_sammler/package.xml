@@ -25,10 +25,6 @@
   <exec_depend>roscpp</exec_depend>
 
   <!-- Note: WiringPi is required for GPIO handling -->
-  <description>
-    This package requires WiringPi for GPIO handling. Ensure WiringPi is installed on your system.
-  </description>
-
   <export>
   </export>
 </package>
