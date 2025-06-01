@@ -19,7 +19,7 @@ include_directories(${catkin_INCLUDE_DIRS})
 
 ## Add the C++ executable for encoder_odometry
 add_executable(encoder_odometry scripts/encoder_odometry.cpp)
-target_link_libraries(encoder_odometry ${catkin_LIBRARIES} wiringPi)
+target_link_libraries(encoder_odometry ${catkin_LIBRARIES} pigpio)
 
 ## Install your Python executable scripts
 catkin_install_python(PROGRAMS
