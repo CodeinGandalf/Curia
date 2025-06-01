@@ -3,11 +3,11 @@
 #include <sensor_msgs/JointState.h>
 #include <geometry_msgs/TransformStamped.h>
 #include <tf2_ros/transform_broadcaster.h>
-#include <wiringPi.h>
+#include <tf2/LinearMath/Quaternion.h>
+#include <pigpio.h>
 #include <cmath>
 #include <map>
 #include <string>
-#include <tf2/LinearMath/Quaternion.h>
 
 // Encoder pins
 const std::map<std::string, std::pair<int, int>> ENCODER_PINS = {
@@ -22,9 +22,9 @@ std::map<std::string, int> ticks = {{"FL", 0}, {"FR", 0}, {"RL", 0}, {"RR", 0}};
 std::map<std::string, int> last_states;
 
 // Callback function for encoder interrupts
-void encoderCallback(const std::string& wheel_name, int pin_a, int pin_b) {
-    int a = digitalRead(pin_a);
-    int b = digitalRead(pin_b);
+void encoderCallback(int gpio, int level, uint32_t tick, const std::string& wheel_name, int pin_a, int pin_b) {
+    int a = gpioRead(pin_a);
+    int b = gpioRead(pin_b);
     int current_state = (a << 1) | b;
 
     int last_state = last_states[wheel_name];
@@ -42,24 +42,32 @@ void encoderCallback(const std::string& wheel_name, int pin_a, int pin_b) {
 
 // Setup encoders
 void setupEncoders() {
-    wiringPiSetupGpio();
+    if (gpioInitialise() < 0) {
+        ROS_ERROR("Failed to initialize pigpio library");
+        ros::shutdown();
+        return;
+    }
+
     for (const auto& [wheel_name, pins] : ENCODER_PINS) {
         int pin_a = pins.first;
         int pin_b = pins.second;
 
-        pinMode(pin_a, INPUT);
-        pinMode(pin_b, INPUT);
-        pullUpDnControl(pin_a, PUD_UP);
-        pullUpDnControl(pin_b, PUD_UP);
+        gpioSetMode(pin_a, PI_INPUT);
+        gpioSetMode(pin_b, PI_INPUT);
+        gpioSetPullUpDown(pin_a, PI_PUD_UP);
+        gpioSetPullUpDown(pin_b, PI_PUD_UP);
 
-        last_states[wheel_name] = (digitalRead(pin_a) << 1) | digitalRead(pin_b);
+        last_states[wheel_name] = (gpioRead(pin_a) << 1) | gpioRead(pin_b);
 
-        wiringPiISR(pin_a, INT_EDGE_BOTH, [wheel_name, pin_a, pin_b]() {
-            encoderCallback(wheel_name, pin_a, pin_b);
-        });
-        wiringPiISR(pin_b, INT_EDGE_BOTH, [wheel_name, pin_a, pin_b]() {
-            encoderCallback(wheel_name, pin_a, pin_b);
-        });
+        gpioSetAlertFuncEx(pin_a, [](int gpio, int level, uint32_t tick, void* userdata) {
+            auto* data = static_cast<std::pair<std::string, std::pair<int, int>>*>(userdata);
+            encoderCallback(gpio, level, tick, data->first, data->second.first, data->second.second);
+        }, new std::pair<std::string, std::pair<int, int>>(wheel_name, pins));
+
+        gpioSetAlertFuncEx(pin_b, [](int gpio, int level, uint32_t tick, void* userdata) {
+            auto* data = static_cast<std::pair<std::string, std::pair<int, int>>*>(userdata);
+            encoderCallback(gpio, level, tick, data->first, data->second.first, data->second.second);
+        }, new std::pair<std::string, std::pair<int, int>>(wheel_name, pins));
     }
 }
 
@@ -172,7 +180,6 @@ int main(int argc, char** argv) {
         ROS_ERROR("Exception: %s", e.what());
     }
 
-    // Add GPIO cleanup
-    ros::shutdown();
+    gpioTerminate();
     return 0;
 }
