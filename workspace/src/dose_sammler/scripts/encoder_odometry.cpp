@@ -7,6 +7,7 @@
 #include <cmath>
 #include <map>
 #include <string>
+#include <tf2/LinearMath/Quaternion.h>
 
 // Encoder pins
 const std::map<std::string, std::pair<int, int>> ENCODER_PINS = {
@@ -100,66 +101,78 @@ int main(int argc, char** argv) {
     ros::Time last_time = ros::Time::now();
     ros::Rate rate(100); // 100 Hz
 
-    while (ros::ok()) {
-        ros::Time now = ros::Time::now();
-        double dt = (now - last_time).toSec();
-        last_time = now;
+    try {
+        while (ros::ok()) {
+            ros::Time now = ros::Time::now();
+            double dt = (now - last_time).toSec();
+            last_time = now;
 
-        if (dt == 0) {
+            if (dt == 0) {
+                rate.sleep();
+                continue;
+            }
+
+            std::map<std::string, int> ticks_delta;
+            for (const auto& [wheel_name, tick] : ticks) {
+                ticks_delta[wheel_name] = tick - last_ticks[wheel_name];
+            }
+            last_ticks = ticks;
+
+            auto [vx, vy, vth, wheel_speeds] = calculateOdometry(ticks_delta, dt);
+
+            double delta_x = (vx * cos(th) - vy * sin(th)) * dt;
+            double delta_y = (vx * sin(th) + vy * cos(th)) * dt;
+            double delta_th = vth * dt;
+
+            x += delta_x;
+            y += delta_y;
+            th += delta_th;
+
+            geometry_msgs::TransformStamped t;
+            t.header.stamp = now;
+            t.header.frame_id = "odom";
+            t.child_frame_id = "base_link";
+            t.transform.translation.x = -x;
+            t.transform.translation.y = y;
+            t.transform.translation.z = 0.0;
+
+            // Fix quaternion calculation
+            tf2::Quaternion q;
+            q.setRPY(0, 0, th);
+            t.transform.rotation.x = q.x();
+            t.transform.rotation.y = q.y();
+            t.transform.rotation.z = q.z();
+            t.transform.rotation.w = q.w();
+            tf_broadcaster.sendTransform(t);
+
+            nav_msgs::Odometry odom;
+            odom.header.stamp = now;
+            odom.header.frame_id = "odom";
+            odom.pose.pose.position.x = x;
+            odom.pose.pose.position.y = y;
+            odom.pose.pose.position.z = 0.0;
+            odom.pose.pose.orientation = t.transform.rotation;
+            odom.child_frame_id = "base_link";
+            odom.twist.twist.linear.x = vx;
+            odom.twist.twist.linear.y = vy;
+            odom.twist.twist.angular.z = vth;
+            odom_pub.publish(odom);
+
+            sensor_msgs::JointState joint_state;
+            joint_state.header.stamp = now;
+            joint_state.name = {"FL", "FR", "RL", "RR"};
+            joint_state.position = {0.0, 0.0, 0.0, 0.0};
+            joint_state.velocity = {wheel_speeds["FL"], wheel_speeds["FR"], wheel_speeds["RL"], wheel_speeds["RR"]};
+            joint_state.effort = {0.0, 0.0, 0.0, 0.0};
+            joint_pub.publish(joint_state);
+
             rate.sleep();
-            continue;
         }
-
-        std::map<std::string, int> ticks_delta;
-        for (const auto& [wheel_name, tick] : ticks) {
-            ticks_delta[wheel_name] = tick - last_ticks[wheel_name];
-        }
-        last_ticks = ticks;
-
-        auto [vx, vy, vth, wheel_speeds] = calculateOdometry(ticks_delta, dt);
-
-        double delta_x = (vx * cos(th) - vy * sin(th)) * dt;
-        double delta_y = (vx * sin(th) + vy * cos(th)) * dt;
-        double delta_th = vth * dt;
-
-        x += delta_x;
-        y += delta_y;
-        th += delta_th;
-
-        geometry_msgs::TransformStamped t;
-        t.header.stamp = now;
-        t.header.frame_id = "odom";
-        t.child_frame_id = "base_link";
-        t.transform.translation.x = x;
-        t.transform.translation.y = y;
-        t.transform.translation.z = 0.0;
-        t.transform.rotation.x = 0.0;
-        t.transform.rotation.y = 0.0;
-        t.transform.rotation.z = sin(th / 2);
-        t.transform.rotation.w = cos(th / 2);
-        tf_broadcaster.sendTransform(t);
-
-        nav_msgs::Odometry odom;
-        odom.header.stamp = now;
-        odom.header.frame_id = "odom";
-        odom.pose.pose.position.x = x;
-        odom.pose.pose.position.y = y;
-        odom.pose.pose.position.z = 0.0;
-        odom.pose.pose.orientation = t.transform.rotation;
-        odom.child_frame_id = "base_link";
-        odom.twist.twist.linear.x = vx;
-        odom.twist.twist.linear.y = vy;
-        odom.twist.twist.angular.z = vth;
-        odom_pub.publish(odom);
-
-        sensor_msgs::JointState joint_state;
-        joint_state.header.stamp = now;
-        joint_state.name = {"FL", "FR", "RL", "RR"};
-        joint_state.velocity = {wheel_speeds["FL"], wheel_speeds["FR"], wheel_speeds["RL"], wheel_speeds["RR"]};
-        joint_pub.publish(joint_state);
-
-        rate.sleep();
+    } catch (const std::exception& e) {
+        ROS_ERROR("Exception: %s", e.what());
     }
 
+    // Add GPIO cleanup
+    ros::shutdown();
     return 0;
 }
