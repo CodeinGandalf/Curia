@@ -28,6 +28,7 @@ import matplotlib.pyplot as plt
 import copy
 from nav_msgs.msg import OccupancyGrid
 from scipy.ndimage import label, center_of_mass
+from sensor_msgs.msg import JointState
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '../scripts'))
 
@@ -38,6 +39,9 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '../src'))
 
 import searchCan as SC
 import checkIfCan as CIC
+
+# Globale Variable, um auf die Daten zuzugreifen
+current_wheel_speeds = {}
 
 
 # Def callback function for the keys:
@@ -105,6 +109,13 @@ def mecanum_inv_kinematics(vx, vy, omega, wheelRadius=0.044, L=0.244, W=0.132):
 
     # Return the wheel speeds:
     return wheelSpeeds.reshape(-1, 1)
+
+
+def wheel_speed_callback(msg):
+    global current_wheel_speeds
+    # msg.name ist eine Liste von Strings
+    # msg.velocity ist eine Liste von floats
+    current_wheel_speeds = dict(zip(msg.name, msg.velocity))
 
 
 def get_LIDAR_Data():
@@ -323,6 +334,8 @@ def calculatePoseCan(map1, map2):
 def main():
     # Init the node and subscriber:
     rospy.init_node('dose_sammler')
+    # Subscriber starten
+    rospy.Subscriber("/wheel_speeds", JointState, wheel_speed_callback)
     rospy.Subscriber('/keyboard_input', String, key_callback)
     rospy.Subscriber("/map", OccupancyGrid, map_callback)
 
@@ -379,7 +392,7 @@ def main():
     
     global take_map1, take_map2, dx, dy, drot, dGripper, dElevator, poseCanManual, homePose, run, latest_map
     
-    # latest_map = None
+    latest_map = None
         
     map1 = None
     map2 = None
@@ -411,6 +424,7 @@ def main():
     MAX_SPEED = 3
     poseOrigin = None
     poseCanWorld = None
+    kp = 0.2
 
     # Calculate the wheel_speeds with the default values:
     wheel_speeds = mecanum_inv_kinematics(dx, dy, drot)
@@ -434,14 +448,6 @@ def main():
 
     # Set the rate to 0.5Hz; 2s:
     rate = rospy.Rate(4)
-
-    # Aufnahme starten (läuft im Hintergrund)
-    # record = subprocess.Popen([
-    #     "ffmpeg", "-y",
-    #     "-f", "v4l2", "-framerate", "25", "-video_size", "640x480",
-    #     "-i", "/dev/video0", "output.mp4"
-    # ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-
 
     # Drive manual through the room to generate the map:
     while run == True:
@@ -490,32 +496,70 @@ def main():
         pwm_gripper = dGripper
         pwm_elevator = dElevator
         
-        # Calculate the engine speeds:
-        fl = wheel_speeds[0, 0]
-        fr = wheel_speeds[1, 0]
-        bl = wheel_speeds[2, 0]
-        br = wheel_speeds[3, 0]
+        # Target variable im Loop hinzufuegen:
+        target_FL = wheel_speeds[0, 0]
+        target_FR = wheel_speeds[1, 0]
+        target_BL = wheel_speeds[2, 0]
+        target_BR = wheel_speeds[3, 0]
 
-        # Calculate the PWM value based upon the speed, max speed and max pwm:
-        pwm_fl = fl/MAX_SPEED*MAX_PWM
-        pwm_fr = fr/MAX_SPEED*MAX_PWM
-        pwm_bl = bl/MAX_SPEED*MAX_PWM
-        pwm_br = br/MAX_SPEED*MAX_PWM
+        # Current motor speeds in rad/s
+        trueSpeed_FL = current_wheel_speeds["FL"]
+        trueSpeed_FR = current_wheel_speeds["FR"]
+        trueSpeed_BL = current_wheel_speeds["BL"]
+        trueSpeed_BR = current_wheel_speeds["BR"]
+
+        dv_FL = (target_FL - trueSpeed_FL)*kp + target_FL
+        dv_FR = (target_FR - trueSpeed_FR)*kp + target_FR
+        dv_BL = (target_BL - trueSpeed_BL)*kp + target_BL
+        dv_BR = (target_BR - trueSpeed_BR)*kp + target_BR
+
+        pwm_fl = dv_FL / MAX_SPEED * MAX_PWM
+        pwm_fr = dv_FR / MAX_SPEED * MAX_PWM
+        pwm_bl = dv_BL / MAX_SPEED * MAX_PWM
+        pwm_br = dv_BR / MAX_SPEED * MAX_PWM
 
         # Print the engine speeds:
-        rospy.loginfo(f"Engine Speeds:\r\nFront Left: {fl:.2f} 1/s\r\nFront Right: {fr:.2f} 1/s\r\nBack Left: {bl:.2f} 1/s\r\nBack Right: {br:.2f} 1/s\r")
+        # Print the true speed and target speed for all wheels
+        rospy.loginfo(f'True Speed FL: {trueSpeed_FL:.3f}, Target: {wheel_speeds[0, 0]:.3f}\r')
+        rospy.loginfo(f'True Speed FR: {trueSpeed_FR:.3f}, Target: {wheel_speeds[1, 0]:.3f}\r')
+        rospy.loginfo(f'True Speed BL: {trueSpeed_BL:.3f}, Target: {wheel_speeds[2, 0]:.3f}\r')
+        rospy.loginfo(f'True Speed BR: {trueSpeed_BR:.3f}, Target: {wheel_speeds[3, 0]:.3f}\r')
 
-        # Update the PWM values for the engines and the servos:
-        set_motor_pwm(pca, MOTOR_FL[0], MOTOR_FL[1], pwm_fl, MAX_PWM)
-        set_motor_pwm(pca, MOTOR_FR[0], MOTOR_FR[1], pwm_fr, MAX_PWM)
-        set_motor_pwm(pca, MOTOR_BL[0], MOTOR_BL[1], pwm_bl, MAX_PWM)
-        set_motor_pwm(pca, MOTOR_BR[0], MOTOR_BR[1], pwm_br, MAX_PWM)
+        if pwm_fl > MAX_PWM or pwm_fr > MAX_PWM or pwm_bl > MAX_PWM or pwm_br > MAX_PWM:
+            if pwm_fl > MAX_PWM:
+                # Update the PWM values for the engines and the servos:
+                set_motor_pwm(pca, MOTOR_FL[0], MOTOR_FL[1], pwm_fl, MAX_PWM)
+                set_motor_pwm(pca, MOTOR_FR[0], MOTOR_FR[1], pwm_fr, pwm_fr)
+                set_motor_pwm(pca, MOTOR_BL[0], MOTOR_BL[1], pwm_bl, pwm_bl)
+                set_motor_pwm(pca, MOTOR_BR[0], MOTOR_BR[1], pwm_br, pwm_br)
+            elif pwm_fr > MAX_PWM:
+                # Update the PWM values for the engines and the servos:
+                set_motor_pwm(pca, MOTOR_FL[0], MOTOR_FL[1], pwm_fl, pwm_fl)
+                set_motor_pwm(pca, MOTOR_FR[0], MOTOR_FR[1], pwm_fr, MAX_PWM)
+                set_motor_pwm(pca, MOTOR_BL[0], MOTOR_BL[1], pwm_bl, pwm_bl)
+                set_motor_pwm(pca, MOTOR_BR[0], MOTOR_BR[1], pwm_br, pwm_br)
+            elif pwm_bl > MAX_PWM:
+                # Update the PWM values for the engines and the servos:
+                set_motor_pwm(pca, MOTOR_FL[0], MOTOR_FL[1], pwm_fl, pwm_fl)
+                set_motor_pwm(pca, MOTOR_FR[0], MOTOR_FR[1], pwm_fr, pwm_fr)
+                set_motor_pwm(pca, MOTOR_BL[0], MOTOR_BL[1], pwm_bl, MAX_PWM)
+                set_motor_pwm(pca, MOTOR_BR[0], MOTOR_BR[1], pwm_br, pwm_br)
+            elif pwm_br > MAX_PWM:
+                # Update the PWM values for the engines and the servos:
+                set_motor_pwm(pca, MOTOR_FL[0], MOTOR_FL[1], pwm_fl, pwm_fl)
+                set_motor_pwm(pca, MOTOR_FR[0], MOTOR_FR[1], pwm_fr, pwm_fr)
+                set_motor_pwm(pca, MOTOR_BL[0], MOTOR_BL[1], pwm_bl, pwm_bl)
+                set_motor_pwm(pca, MOTOR_BR[0], MOTOR_BR[1], pwm_br, MAX_PWM)
+            else:
+                # Update the PWM values for the engines and the servos:
+                set_motor_pwm(pca, MOTOR_FL[0], MOTOR_FL[1], pwm_fl, MAX_PWM)
+                set_motor_pwm(pca, MOTOR_FR[0], MOTOR_FR[1], pwm_fr, MAX_PWM)
+                set_motor_pwm(pca, MOTOR_BL[0], MOTOR_BL[1], pwm_bl, MAX_PWM)
+                set_motor_pwm(pca, MOTOR_BR[0], MOTOR_BR[1], pwm_br, MAX_PWM)
         set_servo_pwm(pi, PWM_PIN_GRIPPER, pwm_gripper)
         set_servo_pwm(pi, PWM_PIN_ELEVATOR, pwm_elevator)
 
         rate.sleep()
-    
-    
 
     if map1 is not None and map2 is not None:
         pose = calculatePoseCan(map1, map2)
@@ -544,17 +588,11 @@ def main():
     distances = lidarData[:, 0]
     angles = lidarData[:, 1]
 
-    # Aufnahme stoppen
-    # record.terminate()
-
     # Search for the pose of the potentional cans:
     # posCans = SC.searchCan(lidarData)
 
     # Print the pose to the console:
     # rospy.loginfo(f'Found potential can: {posCans}\r')
-
-    # Define the varibale for the P-controller:
-    kp = 0.2
 
     # Setup the pins for the Leuze sensors:
     PINLEUZE1 = 25

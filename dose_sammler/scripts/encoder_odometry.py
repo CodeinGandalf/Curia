@@ -14,14 +14,12 @@ from geometry_msgs.msg import Quaternion, Twist, TransformStamped
 from tf.transformations import quaternion_from_euler
 import tf2_ros
 
-from sensor_msgs.msg import JointState
-
 # Define the pins for the encoder:
 ENCODER_PINS = {
-    "FL_A": 19, "FL_B": 13,
+    "FL_A": 13, "FL_B": 19,
     "FR_A": 11, "FR_B": 0,
-    "RL_A": 22, "RL_B": 27,
-    "RR_A": 24, "RR_B": 23
+    "RL_A": 27, "RL_B": 22,
+    "RR_A": 23, "RR_B": 24
 }
 
 # Tick counter:
@@ -80,25 +78,22 @@ def calculate_odometry(ticks_delta, dt):
 
     w = {}
 
-    wheel_circumference = 2 * math.pi * WHEEL_RADIUS
     for name in ticks_delta:
         revs = ticks_delta[name] / TICKS_PER_REV
-        w[name] = (wheel_circumference * revs) / dt
+        w[name] = (2 * math.pi * WHEEL_RADIUS * revs) / dt
 
     # Inverse kinematics:
     vx = (w["FL"] + w["FR"] + w["RL"] + w["RR"]) / 4
     vy = (-w["FL"] + w["FR"] + w["RL"] - w["RR"]) / 4
     wz = (-w["FL"] - w["FR"] + w["RL"] + w["RR"]) / (4 * (L + W))
 
-    return vx, vy, wz, w
+    return vx, vy, wz
 
 
 # Define the main function:
 def main():
     # Init the node:
     rospy.init_node("encoder_odometry")
-    # Unterhalb von odom_pub diese Zeile einfuegen:
-    joint_pub = rospy.Publisher("/wheel_states", JointState, queue_size=10)
     odom_pub = rospy.Publisher("/odom", Odometry, queue_size=50)
     tf_broadcaster = tf2_ros.TransformBroadcaster()
 
@@ -106,7 +101,7 @@ def main():
     setup_encoders()
 
     # Define the rate and further needed parameters:
-    rate = rospy.Rate(100)  # 100 Hz
+    rate = rospy.Rate(10)
     x = y = th = 0.0
     last_ticks = ticks.copy()
     last_time = rospy.Time.now()
@@ -125,7 +120,7 @@ def main():
         last_ticks = ticks.copy()
         
         # Calculate the odometry:
-        vx, vy, vth, w = calculate_odometry(ticks_delta, dt)
+        vx, vy, vth = calculate_odometry(ticks_delta, dt)
 
         # Calculate dx, dy and drot:
         delta_x = (vx * math.cos(th) - vy * math.sin(th)) * dt
@@ -144,7 +139,7 @@ def main():
         t.header.stamp = now
         t.header.frame_id = "odom"
         t.child_frame_id = "base_link"
-        t.transform.translation.x = -x
+        t.transform.translation.x = x
         t.transform.translation.y = y
         t.transform.translation.z = 0.0
         t.transform.rotation.x = odom_quat[0]
@@ -169,16 +164,6 @@ def main():
         odom.twist.twist.linear.x = vx
         odom.twist.twist.linear.y = vy
         odom.twist.twist.angular.z = vth
-
-        # JointState Nachricht mit Ticks & Radgeschwindigkeit
-        joint_state = JointState()
-        joint_state.header.stamp = now
-        joint_state.name = ['FL', 'FR', 'RL', 'RR']
-        joint_state.position = [0.0, 0.0, 0.0, 0.0]
-        joint_state.velocity = [w['FL'], w['FR'], w['RL'], w['RR']]
-        joint_state.effort = [0.0, 0.0, 0.0, 0.0]
-
-        joint_pub.publish(joint_state)
 
         # Publish the odom:
         odom_pub.publish(odom)
