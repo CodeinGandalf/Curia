@@ -550,12 +550,12 @@ def main():
                 set_motor_pwm(pca, MOTOR_FR[0], MOTOR_FR[1], pwm_fr, pwm_fr)
                 set_motor_pwm(pca, MOTOR_BL[0], MOTOR_BL[1], pwm_bl, pwm_bl)
                 set_motor_pwm(pca, MOTOR_BR[0], MOTOR_BR[1], pwm_br, MAX_PWM)
-            else:
-                # Update the PWM values for the engines and the servos:
-                set_motor_pwm(pca, MOTOR_FL[0], MOTOR_FL[1], pwm_fl, MAX_PWM)
-                set_motor_pwm(pca, MOTOR_FR[0], MOTOR_FR[1], pwm_fr, MAX_PWM)
-                set_motor_pwm(pca, MOTOR_BL[0], MOTOR_BL[1], pwm_bl, MAX_PWM)
-                set_motor_pwm(pca, MOTOR_BR[0], MOTOR_BR[1], pwm_br, MAX_PWM)
+        else:
+            # Update the PWM values for the engines and the servos:
+            set_motor_pwm(pca, MOTOR_FL[0], MOTOR_FL[1], pwm_fl, MAX_PWM)
+            set_motor_pwm(pca, MOTOR_FR[0], MOTOR_FR[1], pwm_fr, MAX_PWM)
+            set_motor_pwm(pca, MOTOR_BL[0], MOTOR_BL[1], pwm_bl, MAX_PWM)
+            set_motor_pwm(pca, MOTOR_BR[0], MOTOR_BR[1], pwm_br, MAX_PWM)
         set_servo_pwm(pi, PWM_PIN_GRIPPER, pwm_gripper)
         set_servo_pwm(pi, PWM_PIN_ELEVATOR, pwm_elevator)
 
