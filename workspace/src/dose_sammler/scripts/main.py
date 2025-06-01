@@ -29,6 +29,7 @@ import copy
 from nav_msgs.msg import OccupancyGrid
 from scipy.ndimage import label, center_of_mass
 from sensor_msgs.msg import JointState
+from simple_pid import PID
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '../scripts'))
 
@@ -356,6 +357,15 @@ def calculatePoseCan(map1, map2):
     return list(zip(world_x, world_y, area))
 
 
+def pid_output_to_pwm(corr, v_max=3.0, pwm_max=65535*0.8):
+    # Clamping des PID-Ausgangs auf den Bereich [0, v_max]
+    corr_clamped = max(0, min(corr, v_max))
+    
+    # Skalierung auf PWM-Werte
+    pwm_val = int((corr_clamped / v_max) * pwm_max)
+    return pwm_val
+
+
 # Define the main function:
 def main():
     # Init the node and subscriber:
@@ -533,6 +543,22 @@ def main():
         trueSpeed_FR = current_wheel_speeds.get('FR', 0.0)
         trueSpeed_BL = current_wheel_speeds.get('BL', 0.0)
         trueSpeed_BR = current_wheel_speeds.get('BR', 0.0)
+
+        """
+        pid_FL = PID(0.5, 0.1, 0.02, setpoint=target_FL)
+        pid_FR = PID(0.5, 0.1, 0.02, setpoint=target_FR)
+        pid_BL = PID(0.5, 0.1, 0.02, setpoint=target_BL)
+        pid_BR = PID(0.5, 0.1, 0.02, setpoint=target_BR)
+        corr_FL = pid_FL(trueSpeedFL)
+        corr_FR = pid_FR(trueSpeedFR)
+        corr_BL = pid_BL(trueSpeedBL)
+        corr_BR = pid_BR(trueSpeedBR)
+
+        pwm_FL = pid_output_to_pwm(corr_FL)
+        pwm_FR = pid_output_to_pwm(corr_FR)
+        pwm_BL = pid_output_to_pwm(corr_BL)
+        pwm_BR = pid_output_to_pwm(corr_BR)
+        """
 
         dv_FL = (target_FL - trueSpeed_FL)*kp + target_FL
         dv_FR = (target_FR - trueSpeed_FR)*kp + target_FR
