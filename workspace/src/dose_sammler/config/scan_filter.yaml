@@ -1,0 +1,6 @@
+scan_filter_chain:
+  - name: ignore_sector
+    type: laser_filters/LaserScanAngularBoundsFilterInPlace
+    params:
+      lower_angle: -0.9076
+      upper_angle: -0.5236

@@ -1,0 +1,6 @@
+Linked: (/home/ros/workspace/devel/.private/dose_sammler/lib/pkgconfig/dose_sammler.pc, /home/ros/workspace/devel/lib/pkgconfig/dose_sammler.pc)
+Linked: (/home/ros/workspace/devel/.private/dose_sammler/lib/dose_sammler/encoder_odometry.py, /home/ros/workspace/devel/lib/dose_sammler/encoder_odometry.py)
+Linked: (/home/ros/workspace/devel/.private/dose_sammler/lib/dose_sammler/main.py, /home/ros/workspace/devel/lib/dose_sammler/main.py)
+Linked: (/home/ros/workspace/devel/.private/dose_sammler/lib/dose_sammler/keyboard_control.py, /home/ros/workspace/devel/lib/dose_sammler/keyboard_control.py)
+Linked: (/home/ros/workspace/devel/.private/dose_sammler/share/dose_sammler/cmake/dose_sammlerConfig.cmake, /home/ros/workspace/devel/share/dose_sammler/cmake/dose_sammlerConfig.cmake)
+Linked: (/home/ros/workspace/devel/.private/dose_sammler/share/dose_sammler/cmake/dose_sammlerConfig-version.cmake, /home/ros/workspace/devel/share/dose_sammler/cmake/dose_sammlerConfig-version.cmake)

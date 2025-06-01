@@ -1,0 +1,1 @@
+/home/ros/workspace/devel/.private/dose_sammler/lib/pkgconfig/dose_sammler.pc

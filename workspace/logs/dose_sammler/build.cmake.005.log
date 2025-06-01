@@ -1,0 +1,3 @@
+Not searching for unused variables given on the command line.
+CMake Error: The source directory "/home/ros/workspace/build/dose_sammler/-j4" does not exist.
+Specify --help for usage, or press the help button on the CMake GUI.

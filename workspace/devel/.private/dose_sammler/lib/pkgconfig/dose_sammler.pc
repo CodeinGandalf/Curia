@@ -1,0 +1,8 @@
+prefix=/home/ros/workspace/devel/.private/dose_sammler
+
+Name: dose_sammler
+Description: Description of dose_sammler
+Version: 0.0.1
+Cflags: 
+Libs: -L${prefix}/lib 
+Requires: 

@@ -1,0 +1,6 @@
+rplidar_ros
+/home/ros/workspace/devel/.private/rplidar_ros/lib/pkgconfig/rplidar_ros.pc /home/ros/workspace/devel/lib/pkgconfig/rplidar_ros.pc
+/home/ros/workspace/devel/.private/rplidar_ros/lib/rplidar_ros/rplidarNode /home/ros/workspace/devel/lib/rplidar_ros/rplidarNode
+/home/ros/workspace/devel/.private/rplidar_ros/lib/rplidar_ros/rplidarNodeClient /home/ros/workspace/devel/lib/rplidar_ros/rplidarNodeClient
+/home/ros/workspace/devel/.private/rplidar_ros/share/rplidar_ros/cmake/rplidar_rosConfig-version.cmake /home/ros/workspace/devel/share/rplidar_ros/cmake/rplidar_rosConfig-version.cmake
+/home/ros/workspace/devel/.private/rplidar_ros/share/rplidar_ros/cmake/rplidar_rosConfig.cmake /home/ros/workspace/devel/share/rplidar_ros/cmake/rplidar_rosConfig.cmake

@@ -1,0 +1,1 @@
+/home/ros/workspace/devel/.private/my_test_pkg/lib/pkgconfig/my_test_pkg.pc

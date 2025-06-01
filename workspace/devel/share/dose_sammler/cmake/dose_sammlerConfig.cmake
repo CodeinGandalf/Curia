@@ -1,0 +1,1 @@
+/home/ros/workspace/devel/.private/dose_sammler/share/dose_sammler/cmake/dose_sammlerConfig.cmake

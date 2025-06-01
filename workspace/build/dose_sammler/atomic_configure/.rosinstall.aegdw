@@ -1,0 +1,2 @@
+- setup-file:
+    local-name: /home/ros/workspace/devel/.private/dose_sammler/setup.sh

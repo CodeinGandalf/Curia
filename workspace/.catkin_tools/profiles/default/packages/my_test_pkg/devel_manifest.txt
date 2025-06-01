@@ -1,0 +1,4 @@
+my_test_pkg
+/home/ros/workspace/devel/.private/my_test_pkg/lib/pkgconfig/my_test_pkg.pc /home/ros/workspace/devel/lib/pkgconfig/my_test_pkg.pc
+/home/ros/workspace/devel/.private/my_test_pkg/share/my_test_pkg/cmake/my_test_pkgConfig.cmake /home/ros/workspace/devel/share/my_test_pkg/cmake/my_test_pkgConfig.cmake
+/home/ros/workspace/devel/.private/my_test_pkg/share/my_test_pkg/cmake/my_test_pkgConfig-version.cmake /home/ros/workspace/devel/share/my_test_pkg/cmake/my_test_pkgConfig-version.cmake
