@@ -99,7 +99,7 @@ int main(int argc, char** argv) {
     ros::NodeHandle nh;
 
     ros::Publisher odom_pub = nh.advertise<nav_msgs::Odometry>("/odom", 50);
-    ros::Publisher joint_pub = nh.advertise<sensor_msgs::JointState>("/wheel_states", 10);
+    ros::Publisher joint_pub = nh.advertise<sensor_msgs::JointState>("/wheel_speeds", 10);
     tf2_ros::TransformBroadcaster tf_broadcaster;
 
     setupEncoders();
