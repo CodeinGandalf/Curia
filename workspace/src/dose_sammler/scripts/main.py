@@ -189,6 +189,10 @@ def get_pose():
 
 # Set the function for the motor pwm:
 def set_motor_pwm(pca, channel_forward, channel_backward, pwm_value, MAX_PWM):
+    limit = 65535*0.8
+    if MAX_PWM > limit:
+        MAX_PWM = limit
+
     pwm_value = int(np.clip(pwm_value, -MAX_PWM, MAX_PWM))
 
     # Check if the engine turns forward or backwards:
@@ -202,8 +206,30 @@ def set_motor_pwm(pca, channel_forward, channel_backward, pwm_value, MAX_PWM):
 
 # Define the function for the servo pwm:
 def set_servo_pwm(pi, Pin, pwm_value):
-    pi.set_servo_pulsewidth(Pin, pwm_value)
+    steps = 10
 
+    if pwm_value == 1100:
+        pwm = 1600
+    elif pwm_value == 1600:
+        pwm = 1100
+    elif pwm_value == 1318:
+        pwm = 2400
+    elif pwm_value == 2400:
+        pwm = 1318
+    else:
+        # Fallback: if pwm_value is not one of the expected values
+        pi.set_servo_pulsewidth(Pin, pwm_value)
+        return
+
+    step_size = (pwm_value - pwm) / steps
+
+    for m in range(steps - 1):
+        pwm = pwm + step_size
+        pi.set_servo_pulsewidth(Pin, pwm)
+        rospy.sleep(0.2)
+
+    pi.set_servo_pulsewidth(Pin, pwm_value)
+    
 
 # Callback for map updates:
 def map_callback(msg):
