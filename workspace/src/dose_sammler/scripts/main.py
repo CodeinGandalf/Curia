@@ -503,10 +503,10 @@ def main():
         target_BR = wheel_speeds[3, 0]
 
         # Current motor speeds in rad/s
-        trueSpeed_FL = current_wheel_speeds["FL"]
-        trueSpeed_FR = current_wheel_speeds["FR"]
-        trueSpeed_BL = current_wheel_speeds["BL"]
-        trueSpeed_BR = current_wheel_speeds["BR"]
+        trueSpeed_FL = current_wheel_speeds['FL']
+        trueSpeed_FR = current_wheel_speeds['FR']
+        trueSpeed_BL = current_wheel_speeds['BL']
+        trueSpeed_BR = current_wheel_speeds['BR']
 
         dv_FL = (target_FL - trueSpeed_FL)*kp + target_FL
         dv_FR = (target_FR - trueSpeed_FR)*kp + target_FR
