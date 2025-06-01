@@ -335,7 +335,7 @@ def main():
     # Init the node and subscriber:
     rospy.init_node('dose_sammler')
     # Subscriber starten
-    rospy.Subscriber("/wheel_states", JointState, wheel_speed_callback)
+    rospy.Subscriber("/wheel_speeds", JointState, wheel_speed_callback)
     rospy.Subscriber('/keyboard_input', String, key_callback)
     rospy.Subscriber("/map", OccupancyGrid, map_callback)
 
