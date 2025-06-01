@@ -4,13 +4,16 @@
   <version>0.0.1</version>
   <description>ROS-Paket zur Detektion und Sammlung von Dosen mittels LIDAR und Kamera</description>
   
-  <maintainer email="julian.walter@gmx.ch">Julian Walter </maintainer>
+  <maintainer email="xdd@ligma.com">Prj Cur</maintainer>
   <license>MIT</license>
 
   <buildtool_depend>catkin</buildtool_depend>
 
-  <!-- Laufzeitabhängigkeiten -->
+  <!-- Build dependencies -->
+  <build_depend>roscpp</build_depend>
   <build_depend>rospy</build_depend>
+
+  <!-- Runtime dependencies -->
   <exec_depend>geometry_msgs</exec_depend>
   <exec_depend>nav_msgs</exec_depend>
   <exec_depend>tf2_ros</exec_depend>
@@ -19,6 +22,12 @@
   <exec_depend>sensor_msgs</exec_depend>
   <exec_depend>cv_bridge</exec_depend>
   <exec_depend>message_runtime</exec_depend>
+  <exec_depend>roscpp</exec_depend>
+
+  <!-- Note: WiringPi is required for GPIO handling -->
+  <description>
+    This package requires WiringPi for GPIO handling. Ensure WiringPi is installed on your system.
+  </description>
 
   <export>
   </export>
