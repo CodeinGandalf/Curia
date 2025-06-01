@@ -27,7 +27,6 @@ ENCODER_PINS = {
 # Tick counter:
 ticks = {"FL": 0, "FR": 0, "RL": 0, "RR": 0}
 
-
 last_states = {}  # Dictionary to store last state for each wheel
 
 
@@ -98,7 +97,7 @@ def main():
     # Init the node:
     rospy.init_node("encoder_odometry")
     # Unterhalb von odom_pub diese Zeile einfuegen:
-    joint_pub = rospy.Publisher("/wheel_states", JointState, queue_size=10)
+    joint_pub = rospy.Publisher("/wheel_speeds", JointState, queue_size=10)
     odom_pub = rospy.Publisher("/odom", Odometry, queue_size=50)
     tf_broadcaster = tf2_ros.TransformBroadcaster()
 
