@@ -10,11 +10,6 @@ import rospy
 import matplotlib.pyplot as plt
 import os
 import sys
-import threading
-import smbus
-import subprocess
-import time
-import math
 import numpy as np
 from std_msgs.msg import String
 from adafruit_pca9685 import PCA9685
@@ -31,15 +26,10 @@ from scipy.ndimage import label, center_of_mass
 from sensor_msgs.msg import JointState
 from simple_pid import PID
 
-sys.path.append(os.path.join(os.path.dirname(__file__), '../scripts'))
-
-import lidar_subscriber
-
 # Define the path to the folder of the subfiles:
 sys.path.append(os.path.join(os.path.dirname(__file__), '../src'))
 
-import searchCan as SC
-import checkIfCan as CIC
+import searchCanCam as scc
 
 
 # Def callback function for the keys:
@@ -109,48 +99,10 @@ def mecanum_inv_kinematics(vx, vy, omega, wheelRadius=0.044, L=0.244, W=0.132):
     return wheelSpeeds.reshape(-1, 1)
 
 
+# Callback function to collect the wheel speeds traced by the encoders:
 def wheel_speed_callback(msg):
     global current_wheel_speeds
-    # msg.name ist eine Liste von Strings
-    # msg.velocity ist eine Liste von floats
     current_wheel_speeds = dict(zip(msg.name, msg.velocity))
-
-
-def get_LIDAR_Data():
-    scan = lidar_subscriber.get_latest_scan()
-
-    max_range = 5.0
-    threshold_distance = 0.15
-    angle_min = scan.angle_min
-    angle_increment = scan.angle_increment
-    angle_distance_array = []
-
-    def normalize_angle(angle_rad):
-        return (angle_rad + np.pi) % (2 * np.pi) - np.pi
-
-    def in_angle_range(angle, min_angle, max_angle):
-        if min_angle < max_angle:
-            return min_angle <= angle <= max_angle
-        else:
-            return angle >= min_angle or angle <= max_angle
-
-    filter_angle_min = normalize_angle(np.deg2rad(308))
-    filter_angle_max = normalize_angle(np.deg2rad(330))
-
-    for i, distance in enumerate(scan.ranges):
-        angle = normalize_angle(angle_min + i * angle_increment)
-
-        if not (0.0 < distance < max_range):
-            distance = max_range
-
-        if in_angle_range(angle, filter_angle_min, filter_angle_max):
-            distance = max_range
-
-        angle_distance_array.append((distance, angle))
-        #rospy.loginfo(f"{np.rad2deg(angle):.1f}°, final={distance:.2f}m")
-
-    return np.array(angle_distance_array)
-
 
 
 # Get the current pose:
@@ -181,16 +133,19 @@ def get_pose():
 
         return pose
     except (tf.Exception, tf.LookupException, tf.ConnectivityException):
-        rospy.logerr("Fehler beim Auslesen der Position.")
+        rospy.logerr("Error while trying to get the current pose.")
         return None
 
 
 # Set the function for the motor pwm:
 def set_motor_pwm(pca, channel_forward, channel_backward, pwm_value, MAX_PWM):
+    # If the provided max PWM value is larger then the limit set it to the limit:
     limit = 65535*0.8
+
     if MAX_PWM > limit:
         MAX_PWM = limit
 
+    # Clip the PWM value if needed:
     pwm_value = int(np.clip(pwm_value, -MAX_PWM, MAX_PWM))
 
     # Check if the engine turns forward or backwards:
@@ -204,8 +159,10 @@ def set_motor_pwm(pca, channel_forward, channel_backward, pwm_value, MAX_PWM):
 
 # Define the function for the servo pwm:
 def set_servo_pwm(pi, Pin, pwm_value):
+    # Work with 10 steps to smooth the servo movement:
     steps = 10
 
+    # Check what servo movement should be generated (four possible states cause there are 2 servos with 2 possible states):
     if pwm_value == 1100:
         pwm = 1600
     elif pwm_value == 1600:
@@ -215,12 +172,14 @@ def set_servo_pwm(pi, Pin, pwm_value):
     elif pwm_value == 2400:
         pwm = 1318
     else:
-        # Fallback: if pwm_value is not one of the expected values
+        # If there is an other PWM value then known write it onto the pin without smoothing it:
         pi.set_servo_pulsewidth(Pin, pwm_value)
         return
 
+    # Calculate the step size for the 10 steps:
     step_size = (pwm_value - pwm) / steps
 
+    # Process 9 steps and then set the PWM value to the requested PWM value:
     for m in range(steps - 1):
         pwm = pwm + step_size
         pi.set_servo_pulsewidth(Pin, pwm)
@@ -231,10 +190,8 @@ def set_servo_pwm(pi, Pin, pwm_value):
 
 # Callback for map updates:
 def map_callback(msg):
-    rospy.logwarn("Update map Callback")
     global latest_map
     latest_map = copy.deepcopy(msg)
-   # rospy.loginfo(f'latest map: {latest_map}')
 
 
 # Generate the array out of the map message data:
@@ -262,6 +219,9 @@ def calculatePoseCan(map1, map2):
     # Calculate the arrays for the maps:
     map1_array = map_to_array(map1)
     map2_array = map_to_array(map2)
+
+    rospy.loginfo(f'shape map 1: {map1_array.shape}\r')
+    rospy.loginfo(f'shape map 2: {map2_array.shape}\r')
 
     # Crop the margin for the maps:
     map1_cropped = crop_map(map1_array, crop_cells)
@@ -354,44 +314,49 @@ def calculatePoseCan(map1, map2):
     return list(zip(world_x, world_y, area))
 
 
+# Function to convert the PID controller value to an PWM value:
 def pid_output_to_pwm(corr, v_max=3.0, pwm_max=65535*0.8):
-    # Clamping des PID-Ausgangs auf den Bereich [0, v_max]
+    # Clamping the PID output to the interval of [0, v_max]
     corr_clamped = max(0, min(corr, v_max))
     
-    # Skalierung auf PWM-Werte
+    # Scale the values up to the max PWM value:
     pwm_val = int((corr_clamped / v_max) * pwm_max)
     return pwm_val
 
 
+# Function to update the PWM for the engines:
 def driveEngines(wheel_speeds, trueSpeedFL, trueSpeedFR, trueSpeedBL, trueSpeedBR, MAX_PWM, pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR):
-    # Target variable im Loop hinzufuegen:
+    # Add the target variables:
     target_FL = wheel_speeds[0, 0]
     target_FR = wheel_speeds[1, 0]
     target_BL = wheel_speeds[2, 0]
     target_BR = wheel_speeds[3, 0]
 
+    # Update the setpoint and the constants for the controller:
     pid_FL = PID(0.5, 0.1, 0.02, setpoint=target_FL)
     pid_FR = PID(0.5, 0.1, 0.02, setpoint=target_FR)
     pid_BL = PID(0.5, 0.1, 0.02, setpoint=target_BL)
     pid_BR = PID(0.5, 0.1, 0.02, setpoint=target_BR)
 
+    # Calculate the correction for the engine:
     corr_FL = pid_FL(trueSpeedFL)
     corr_FR = pid_FR(trueSpeedFR)
     corr_BL = pid_BL(trueSpeedBL)
     corr_BR = pid_BR(trueSpeedBR)
 
+    # Calculte the correct PWM values from the PID controller:
     pwm_fl = pid_output_to_pwm(corr_FL)
     pwm_fr = pid_output_to_pwm(corr_FR)
     pwm_bl = pid_output_to_pwm(corr_BL)
     pwm_br = pid_output_to_pwm(corr_BR)
 
-    # Print the engine speeds:
-    # Print the true speed and target speed for all wheels
+    # Print the true speed and target speed for all wheels:
     rospy.loginfo(f'True Speed FL: {trueSpeedFL:.3f}, Target: {wheel_speeds[0, 0]:.3f}\r')
     rospy.loginfo(f'True Speed FR: {trueSpeedFR:.3f}, Target: {wheel_speeds[1, 0]:.3f}\r')
     rospy.loginfo(f'True Speed BL: {trueSpeedBL:.3f}, Target: {wheel_speeds[2, 0]:.3f}\r')
     rospy.loginfo(f'True Speed BR: {trueSpeedBR:.3f}, Target: {wheel_speeds[3, 0]:.3f}\r')
 
+    # Check if one of the engines has reached the max PWM value:
     if pwm_fl > MAX_PWM or pwm_fr > MAX_PWM or pwm_bl > MAX_PWM or pwm_br > MAX_PWM:
         if pwm_fl > MAX_PWM:
             # Update the PWM values for the engines and the servos:
@@ -423,18 +388,6 @@ def driveEngines(wheel_speeds, trueSpeedFL, trueSpeedFR, trueSpeedBL, trueSpeedB
         set_motor_pwm(pca, MOTOR_FR[0], MOTOR_FR[1], pwm_fr, MAX_PWM)
         set_motor_pwm(pca, MOTOR_BL[0], MOTOR_BL[1], pwm_bl, MAX_PWM)
         set_motor_pwm(pca, MOTOR_BR[0], MOTOR_BR[1], pwm_br, MAX_PWM)
-    
-    """
-    dv_FL = (target_FL - trueSpeed_FL)*kp + target_FL
-    dv_FR = (target_FR - trueSpeed_FR)*kp + target_FR
-    dv_BL = (target_BL - trueSpeed_BL)*kp + target_BL
-    dv_BR = (target_BR - trueSpeed_BR)*kp + target_BR
-
-    pwm_fl = dv_FL / MAX_SPEED * MAX_PWM
-    pwm_fr = dv_FR / MAX_SPEED * MAX_PWM
-    pwm_bl = dv_BL / MAX_SPEED * MAX_PWM
-    pwm_br = dv_BR / MAX_SPEED * MAX_PWM
-    """
 
 
 # Define the main function:
@@ -446,30 +399,19 @@ def main():
     rospy.Subscriber('/keyboard_input', String, key_callback)
     rospy.Subscriber("/map", OccupancyGrid, map_callback)
 
-    rospy.sleep(2)
-
-    # Close all plots if any plots are opened:
-    plt.close('all')
-
-    # Initalise the I2C:
-    i2c = busio.I2C(SCL, SDA)
-
-    # Initalise the PWM board:
-    pca = PCA9685(i2c)
-    pca.frequency = 1000
+    # Define all global variables as global:
+    global take_map1, take_map2, dx, dy, drot, dGripper, dElevator, poseCanManual, homePose, run, latest_map, current_wheel_speeds
 
     # Define the channels for the engines and the servos:
     MOTOR_FL = (0, 1)
     MOTOR_FR = (2, 3)
     MOTOR_BL = (4, 5)
     MOTOR_BR = (6, 7)
-    
     PWM_PIN_GRIPPER = 18
     PWM_PIN_ELEVATOR = 10
-    
-    pi = pigpio.pi()
-    if not pi.connected:
-        exit()
+
+    # Define the max PWM for the engines:
+    MAX_PWM = 65535*0.8
     
     # Define the PWM values for the servos:
     GRIPPER_OPEN = 1600
@@ -477,97 +419,95 @@ def main():
     ELEVATOR_BOTTOM = 2400
     ELEVATOR_TOP = 1318
     
-    pi.set_PWM_frequency(PWM_PIN_GRIPPER, 50)
-    rospy.sleep(1)
-    pi.set_PWM_frequency(PWM_PIN_ELEVATOR, 50)
-    
-    pi.set_servo_pulsewidth(PWM_PIN_GRIPPER, GRIPPER_OPEN)
-    rospy.sleep(1)
-    pi.set_servo_pulsewidth(PWM_PIN_ELEVATOR, ELEVATOR_BOTTOM)
-    rospy.sleep(1)
-
-    # Define the max PWM:
-    MAX_PWM = 65535*0.8
-
-    # Initalise the PWM values:
-    pwm_fl = 0
-    pwm_fr = 0
-    pwm_bl = 0
-    pwm_br = 0
+    # Initalise the PWM values for the servos:
     pwm_gripper = GRIPPER_OPEN
     pwm_elevator = ELEVATOR_BOTTOM
-    
-    global take_map1, take_map2, dx, dy, drot, dGripper, dElevator, poseCanManual, homePose, run, latest_map, current_wheel_speeds
 
+    # Initalise the variable for the current_wheel_speeds in case there aren't any encoder data available:
     current_wheel_speeds = {}
     
+    # Initialise the variable for the latest map as none, in case the setup for the map fails:
     latest_map = None
-        
+
+    # Set the variables to store the map to none: 
     map1 = None
     map2 = None
     
+    # Set the variables to take a snap shot of the variables to none:
     take_map1 = False
     take_map2 = False
-    dx = dy = drot = dGripper = dElevator = 0
+
+    # Initalise the variables for the movement to 0:
+    dx = dy = drot = 0
+
+    # Set the variables to control the servos with the keyboard to default:
+    dGripper = pwm_gripper
+    dElevator = pwm_elevator
+
+    # Set the bools to check if the pose of the home pose / can pose should be computed to false as default:
     homePose = False
     poseCanManual = False
-    run = True
 
-    # Shut down all channels on the pca board:
-    for channel in range(16):
-        pca.channels[channel].duty_cycle = 0
-    
-    # Set the PWM values to default:
-    set_motor_pwm(pca, MOTOR_FL[0], MOTOR_FL[1], pwm_fl, MAX_PWM)
-    set_motor_pwm(pca, MOTOR_FR[0], MOTOR_FR[1], pwm_fr, MAX_PWM)
-    set_motor_pwm(pca, MOTOR_BL[0], MOTOR_BL[1], pwm_bl, MAX_PWM)
-    set_motor_pwm(pca, MOTOR_BR[0], MOTOR_BR[1], pwm_br, MAX_PWM)
-
-    # Define the needed variables:
+    # Define the needed variables to control the robot in the manual mode:
     dx = 0
     dy = 0
     drot = 0
     old_dx = 0
     old_dy = 0
     old_drot = 0
-    MAX_SPEED = 3
+
+    # Set the variable for the home pose and the pose of the can to none as default:
     poseOrigin = None
     poseCanWorld = None
+
+    # Define a constante to calculate a speed target from the distance to drive the robot in the autonome mode to it's target:
     kp = 0.2
 
-    # Set the starting variables to default:
+    # Set the bools to check if there is a can in the map data / if there really is a can to false as default:
     posCans = False
     isCan = False
+
+    # Define the offset of the cam and the LIDAR to the base link:
     offsetCam = 87.98
     offsetLidar = 164.07
+
+    # Define the index of the port for the USB cam:
     camera_index = '/dev/video0'
+
+    # Set the bool to run the manual steering of the robot to true:
+    run = True
+
+    # Setup pigpio for the PWM pins to control the servos:
+    pi = pigpio.pi()
+    if not pi.connected:
+        exit()
+
+    # Initalise the I2C:
+    i2c = busio.I2C(SCL, SDA)
+
+    # Initalise the PWM board to control the engines, 1000 Hz is the max PWM value for that board:
+    pca = PCA9685(i2c)
+    pca.frequency = 1000
+
+    # Set the frequency and PWM values for the servos:
+    pi.set_PWM_frequency(PWM_PIN_GRIPPER, 50)
+    pi.set_PWM_frequency(PWM_PIN_ELEVATOR, 50)
+    pi.set_servo_pulsewidth(PWM_PIN_GRIPPER, GRIPPER_OPEN)
+    pi.set_servo_pulsewidth(PWM_PIN_ELEVATOR, ELEVATOR_BOTTOM)
+
+    # Shut down all channels on the pca board for the start:
+    for channel in range(16):
+        pca.channels[channel].duty_cycle = 0
 
     # Calculate the wheel_speeds with the default values:
     wheel_speeds = mecanum_inv_kinematics(dx, dy, drot)
 
-    # Start the LIADR node:
-    lidar_subscriber.init_lidar_subscriber()
-
-    rospy.sleep(1)
-
-    # Get the first LIDAR data:
-    lidarData = get_LIDAR_Data()
-
-    # Print the LIDAR data if there are any LIDAR data:
-    if lidarData is not None and lidarData.size > 0:
-        rospy.loginfo("\rtrying to print the data \r")
-        rospy.loginfo(f'lidardata: {lidarData[0][0]:.3f} m\r')
-    else:
-        rospy.logwarn("\rNoch keine LIDAR-Daten empfangen.\r")
-
-    rospy.sleep(1)
-
-    # Set the rate to 0.5Hz; 2s:
+    # Set the rate to 4 Hz:
     rate = rospy.Rate(4)
 
     # Drive manual through the room to generate the map:
     while run == True:
-        # If the home Position has been selected get the current position as home pose:
+        # If the home Position has been selected get the current position as poseOrigin and set the speed targets to 0 / stop the loop:
         if homePose:
             rospy.loginfo("Get home pose\r")
             run = False
@@ -578,12 +518,14 @@ def main():
             dy = 0
             drot = 0
         
+        # Get the pose of the can manualy:
         if poseCanManual == True:
             rospy.loginfo("Get can pose\r")
             poseCanWorld = get_pose()
             rospy.loginfo(f'Pose: can {poseCanWorld}\r')
             poseCanManual = False
         
+        # Take a first snap shot of the map without a can in the room:
         if take_map1 is True:
             rospy.loginfo("Taking the snap shot for the first map\r")
             rospy.loginfo(f'latest map: {latest_map}\r')
@@ -591,18 +533,21 @@ def main():
             rospy.loginfo("Snapshot 1\r")
             take_map1 = False
 
+        # Take a second snap shot of the map, now with the can in the room:
         if take_map2 is True:
-            map2 = copy.deepcopy(latest_map)
-            rospy.loginfo("Snapshot 2\r")
-            take_map2 = False
-            run = False
-            dx = 0
-            dy = 0
-            drot = 0
-            poseOrigin = get_pose()
-
-        # Print the current speeds:
-        rospy.loginfo(f"dx: {dx} m/s | dy: {dy} m/s | drot: {drot} m/s\r")
+            # Check if there is a snap shot of the first map without a can:
+            if map1 is None:
+                rospy.logwarn("You haven't generated a first snap shot without the can on the map.")
+                take_map2 = False
+            else:
+                map2 = copy.deepcopy(latest_map)
+                rospy.loginfo("Snapshot 2\r")
+                take_map2 = False
+                run = False
+                dx = 0
+                dy = 0
+                drot = 0
+                poseOrigin = get_pose()
 
         # Calculate the difference to the value before:
         diff_dx = abs(dx - old_dx)
@@ -613,61 +558,49 @@ def main():
         if diff_dx != 0 or diff_dy != 0 or diff_drot != 0 or dx == 0 or dy == 0 or drot == 0:
             wheel_speeds = mecanum_inv_kinematics(dx, dy, drot)
         
+        # Update the PWM values for the servos:
         pwm_gripper = dGripper
         pwm_elevator = dElevator
 
-        # Current motor speeds in rad/s
+        # Current motor speeds calculated with the encoder data in rad/s:
         trueSpeed_FL = current_wheel_speeds.get('FL', 0.0)
         trueSpeed_FR = current_wheel_speeds.get('FR', 0.0)
         trueSpeed_BL = current_wheel_speeds.get('BL', 0.0)
         trueSpeed_BR = current_wheel_speeds.get('BR', 0.0)
         
+        # Update the engine targets:
         driveEngines(wheel_speeds, trueSpeed_FL, trueSpeed_FR, trueSpeed_BL, trueSpeed_BR, MAX_PWM, pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR)
 
+        # Update the PWM values for the servos:
         set_servo_pwm(pi, PWM_PIN_GRIPPER, pwm_gripper)
         set_servo_pwm(pi, PWM_PIN_ELEVATOR, pwm_elevator)
 
         rate.sleep()
 
+    # Set the engine PWM targets to 0:
     set_motor_pwm(pca, MOTOR_FL[0], MOTOR_FL[1], 0, MAX_PWM)
     set_motor_pwm(pca, MOTOR_FR[0], MOTOR_FR[1], 0, MAX_PWM)
     set_motor_pwm(pca, MOTOR_BL[0], MOTOR_BL[1], 0, MAX_PWM)
     set_motor_pwm(pca, MOTOR_BR[0], MOTOR_BR[1], 0, MAX_PWM)
 
+    # Check if there are 2 arrays with some map data in it:
     if map1 is not None and map2 is not None:
+        # Calculate the pose of the can:
         pose = calculatePoseCan(map1, map2)
-        
-        map1_array = map_to_array(map1)
-        map2_array = map_to_array(map2)
-        rospy.loginfo(f'shape map 1: {map1_array.shape}\r')
-        rospy.loginfo(f'shape map 2: {map2_array.shape}\r')
 
+        # Define positionCan as an array:
         positionCan = []
 
+        # Print all contours in the mask:
         for i, (x, y, a) in enumerate(pose):
-            rospy.loginfo(f"Hindernis {i + 1}: x = {x:.2f}, y = {y:.2f}, Flaeche = {a:.3f} cm²\r")
+            rospy.loginfo(f"Object {i + 1}: x = {x:.2f}, y = {y:.2f}, Area = {a:.3f} cm²\r")
 
             if a >= 36.0 and a <= 64.0:
                 rospy.loginfo(f'Pose can: {x:.2f}, {y:.2f}\r')
                 positionCan.append((x, y))
                 posCans = True
     else:
-        rospy.loginfo("map1 and or map2 is empty\r")
-
-
-    """
-    # Get the current LIDAR data:
-    lidarData = get_LIDAR_Data()
-
-    distances = lidarData[:, 0]
-    angles = lidarData[:, 1]
-
-    # Search for the pose of the potentional cans:
-    posCans = SC.searchCan(lidarData)
-
-    # Print the pose to the console:
-    rospy.loginfo(f'Found potential can: {posCans}\r')
-    """
+        rospy.loginfo("map1 and or map2 are / is empty\r")
     
     # Setup the pins for the Leuze sensors:
     PINLEUZE1 = 25
@@ -679,20 +612,10 @@ def main():
     # Read the current state:
     Leuze1 = GPIO.input(PINLEUZE1)
     Leuze2 = GPIO.input(PINLEUZE2)
-    
-    rospy.loginfo(f"Leuze1: {Leuze1}")
-    rospy.loginfo(f"Leuze2: {Leuze2}")
 
-    # Check if there are any cans in the LIDAR data:
+    # Check if there is a can detected in the map data:
     if posCans:
-        """
-        # Safe the current distance and angle information into posCan:
-        dist = posCans[0][0]
-        angle = posCans[0][1]
-        pose.pose.position.x
-        pose.pose.position.y
-        """
-
+        # Calculate the difference in the pose of the can and the current pose:
         target_pose_x = positionCan[0][0]
         target_pose_y = positionCan[0][1]
         diff_pose_x = target_pose_x - poseOrigin.pose.x
@@ -708,33 +631,25 @@ def main():
             # Update the wheel speeds:
             wheel_speeds = mecanum_inv_kinematics(dx, dy, drot)
 
-            # Current motor speeds in rad/s
+            # Current motor speeds in rad/s:
             trueSpeed_FL = current_wheel_speeds.get('FL', 0.0)
             trueSpeed_FR = current_wheel_speeds.get('FR', 0.0)
             trueSpeed_BL = current_wheel_speeds.get('BL', 0.0)
             trueSpeed_BR = current_wheel_speeds.get('BR', 0.0)
 
+            # Update the PWM targets for the eninges:
             driveEngines(wheel_speeds, trueSpeed_FL, trueSpeed_FR, trueSpeed_BL, trueSpeed_BR, MAX_PWM, pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR)
 
+            # Get the current pose:
             currentPose = get_pose()
 
+            # Calculate the difference in the pose:
             diff_pose_x = target_pose_x - currentPose.pose.x
             diff_pose_y = target_pose_y - currentPose.pose.y
 
             rate.sleep()
-
-            """
-            # Get the current LIDAR data to check how big dx is now:
-            lidarData = get_LIDAR_Data()
-
-            # Search for the can again:
-            posCans = SC.searchCan(lidarData)
-
-            # Get the new distance and angle of the center from the can:
-            dist = posCans[0][0]
-            angle = posCans[0][1]
-            """
         
+        # Set the engine targets to 0:
         set_motor_pwm(pca, MOTOR_FL[0], MOTOR_FL[1], 0, MAX_PWM)
         set_motor_pwm(pca, MOTOR_FR[0], MOTOR_FR[1], 0, MAX_PWM)
         set_motor_pwm(pca, MOTOR_BL[0], MOTOR_BL[1], 0, MAX_PWM)
@@ -742,7 +657,7 @@ def main():
 
         # Drive towards the can:
         while diff_pose_x > 0.5:
-            # Update the dx and dy target:
+            # Update the dx and dx target:
             dx = diff_pose_x*kp
             dy = 0
             drot = 0
@@ -750,42 +665,27 @@ def main():
             # Calculate the new wheel speeds:
             wheel_speeds = mecanum_inv_kinematics(dx, dy, drot)
 
-            # Current motor speeds in rad/s
+            # Current motor speeds in rad/s:
             trueSpeed_FL = current_wheel_speeds.get('FL', 0.0)
             trueSpeed_FR = current_wheel_speeds.get('FR', 0.0)
             trueSpeed_BL = current_wheel_speeds.get('BL', 0.0)
             trueSpeed_BR = current_wheel_speeds.get('BR', 0.0)
 
+            # Update the engine targets:
             driveEngines(wheel_speeds, trueSpeed_FL, trueSpeed_FR, trueSpeed_BL, trueSpeed_BR, MAX_PWM, pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR)
 
+            # Get the current pose:
             currentPose = get_pose()
 
+            # Calculate the difference between the current pose and the target:
             diff_pose_x = target_pose_x - currentPose.pose.x
             diff_pose_y = target_pose_y - currentPose.pose.y
 
             rate.sleep()
 
-            """
-            # Get the current LIDAR data:
-            lidarData = get_LIDAR_Data()
-
-            # Serach for the pose of the can:
-            posCans = SC.searchCan(lidarData)
-
-            # Update the distance and angle for the pose of the can:
-            dist = posCans[0][0]
-            angle = posCans[0][1]
-            """
-
-        """
         # Check if there is a can based upon the LIDAR and cam data:
-        isCan, offset = CIC.checkIfCan(posCans, camera_index, offsetCam, offsetLidar)
-
-        # Print the distance and angle of the can:
-        rospy.loginfo(f'isCan: {isCan}, offset: {offset}')
-        """
-
-        isCan = True
+        # Use the LIDAR data and search for the can in the picture:
+        isCan = scc.find_best_can(camera_index)
 
         # If there is a can; collect it:
         if isCan:
@@ -799,12 +699,13 @@ def main():
                 # Update the wheel speeds:
                 wheel_speeds = mecanum_inv_kinematics(dx, dy, drot)
 
-                # Current motor speeds in rad/s
+                # Current motor speeds in rad/s:
                 trueSpeed_FL = current_wheel_speeds.get('FL', 0.0)
                 trueSpeed_FR = current_wheel_speeds.get('FR', 0.0)
                 trueSpeed_BL = current_wheel_speeds.get('BL', 0.0)
                 trueSpeed_BR = current_wheel_speeds.get('BR', 0.0)
 
+                # Update the engine PWM targets:
                 driveEngines(wheel_speeds, trueSpeed_FL, trueSpeed_FR, trueSpeed_BL, trueSpeed_BR, MAX_PWM, pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR)
 
                 # Read from the Leuze sensors if they can see the can:
@@ -813,23 +714,20 @@ def main():
 
                 rate.sleep()
 
-            # Set the PWM values for the engines back to 0 to stop the robot and close the gripper:
-            pwm_gripper = GRIPPER_CLOSED
-            pwm_elevator = ELEVATOR_BOTTOM
-
-            # Print the engine speeds:
-            rospy.loginfo(f"Engine Speeds:\r\nFront Left: {fl:.2f} 1/s\r\nFront Right: {fr:.2f} 1/s\r\nBack Left: {bl:.2f} 1/s\r\nBack Right: {br:.2f} 1/s\r")
-
             # Update the PMW value for the engines and the servos:
             set_motor_pwm(pca, MOTOR_FL[0], MOTOR_FL[1], 0, MAX_PWM)
             set_motor_pwm(pca, MOTOR_FR[0], MOTOR_FR[1], 0, MAX_PWM)
             set_motor_pwm(pca, MOTOR_BL[0], MOTOR_BL[1], 0, MAX_PWM)
             set_motor_pwm(pca, MOTOR_BR[0], MOTOR_BR[1], 0, MAX_PWM)
-            set_servo_pwm(pi, PWM_PIN_GRIPPER, pwm_gripper)
-            set_servo_pwm(pi, PWM_PIN_ELEVATOR, pwm_elevator)
 
-            # Update the elevator PWM value:
+            # Set the PWM values for the servos to grab the can:
+            pwm_gripper = GRIPPER_CLOSED
             pwm_elevator = ELEVATOR_TOP
+
+            # Update the PWM for the gripper to grab the can:
+            set_servo_pwm(pi, PWM_PIN_GRIPPER, pwm_gripper)
+
+            # Update the elevator PWM value to lift the can:
             set_servo_pwm(pi, PWM_PIN_ELEVATOR, pwm_elevator)
 
         # Get the current pose:
@@ -856,29 +754,28 @@ def main():
             # Update the wheel speeds:
             wheel_speeds = mecanum_inv_kinematics(dx, dy, drot)
 
-            # Current motor speeds in rad/s
+            # Current motor speeds in rad/s:
             trueSpeed_FL = current_wheel_speeds.get('FL', 0.0)
             trueSpeed_FR = current_wheel_speeds.get('FR', 0.0)
             trueSpeed_BL = current_wheel_speeds.get('BL', 0.0)
             trueSpeed_BR = current_wheel_speeds.get('BR', 0.0)
             
+            # Update the engine targets:
             driveEngines(wheel_speeds, trueSpeed_FL, trueSpeed_FR, trueSpeed_BL, trueSpeed_BR, MAX_PWM, pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR)
 
             rate.sleep()
         
-        # Update the PWM value for the elevator lower the can:
+        # Set the elevator PWM value to the bottom state:
         pwm_elevator = ELEVATOR_BOTTOM
 
+        # Update the PWM value for the elevator to lower the can:
         set_servo_pwm(pi, PWM_PIN_ELEVATOR, pwm_elevator)
 
-        # Sleep for 1s that the servo can update it's value
-        rospy.sleep(1)
+        # Set the gripper PWM value to the open state:
+        pwm_gripper = GRIPPER_OPEN
 
         # Update the PWM value for the gripper to open the gripper:
-        pwm_gripper = GRIPPER_OPEN
         set_servo_pwm(pi, PWM_PIN_GRIPPER, pwm_gripper)
-        
-        rospy.sleep(1)
 
     # End of the program:
     rospy.loginfo("Program has finished.")

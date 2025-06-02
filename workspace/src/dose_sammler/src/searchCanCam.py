@@ -8,71 +8,22 @@ Created on Wed Apr 30 13:46:31 2025
 
 import cv2
 import numpy as np
-import matplotlib.pyplot as plt
 import rospy
 
 
-# Function to generate the gauss probability function:
-def generate_gaussian_matrix(size_x, size_y, mu_x, mu_y, sigma):
-    # Generate the matix for the normalized probability function:
-    x = np.linspace(0, size_x - 1, size_x)
-    y = np.linspace(0, size_y - 1, size_y)
-    xx, yy = np.meshgrid(x, y)
-    gaussian = np.exp(-((xx - mu_x)**2 + (yy - mu_y)**2) / (2 * sigma**2))
-    gaussian /= np.max(gaussian)
-    return gaussian
-
-
 # Search for the best can:
-def find_best_can(poseCan, camera_index, offsetCam, offsetLidar):
-    rospy.loginfo("Hello from searchCanCam")
+def find_best_can(camera_index):
     cap = cv2.VideoCapture(camera_index)
 
     if not cap.isOpened():
         rospy.loginfo("Error, device couldn't be opened!")
         return
 
-    # Expected ratio for the can is 2.51 with a tolerance of 10%:
+    # Expected ratio for the can is 2.51 with a tolerance of 20%:
     expected_aspect_ratio = 2.51
     tolerance = 0.2
-
-    # Position fake LIDAR Data placed into the middle of the camera chip:
-    # lidar_mu_x = int(u)
-    lidar_mu_x = 640 // 2
-    lidar_mu_y = 480 // 2
-    picture_hight = 480
-    picture_width = 640
-    f_x = 4
-    c_x = 640/2
-    sigma = 70
     i = 0
     can = False
-
-    deltaXGlobe = poseCan[0][0]*np.cos(poseCan[0][1])
-    xGlobe = deltaXGlobe - offsetLidar
-
-    X = xGlobe - offsetCam
-    Z = poseCan[0][0]*np.sin(poseCan[0][1])
-
-    u = X * f_x / Z + c_x
-    rospy.loginfo(f'Value of u: {u}')
-
-    x_b = None
-
-    # Generate the probabikity function with the LIDAR data:
-    probability_map = generate_gaussian_matrix(picture_width, picture_hight,
-                                               lidar_mu_x, lidar_mu_y, sigma)
-
-    """
-    # Plot der Gaussian-Verteilung
-    plt.figure(figsize=(8, 8))
-    plt.imshow(probability_map, cmap='viridis', interpolation='nearest')
-    plt.colorbar(label='Wahrscheinlichkeitsdichte')
-    plt.title('Gaussian-Verteilung')
-    plt.xlabel('X')
-    plt.ylabel('Y')
-    plt.show()
-    """
 
     while True:
         # Run while True:
@@ -80,7 +31,7 @@ def find_best_can(poseCan, camera_index, offsetCam, offsetLidar):
         if not ret:
             cap.release()
             cv2.destroyAllWindows()
-            return False, False, False
+            return False
 
         # Convert the picture into gray values:
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
@@ -152,45 +103,22 @@ def find_best_can(poseCan, camera_index, offsetCam, offsetLidar):
 
                 # Check if the ration diff is within the tolerance:
                 if ratio_diff < tolerance:
-                    # Define the coords of the center:
-                    center_x = x + w // 2
-                    center_y = y + h // 2
+                    can = True
+                    return True
 
-                    # Check the probability of the found center point:
-                    if 0 <= center_x < picture_width and 0 <= center_y < picture_hight:
-                        score = probability_map[int(center_y), int(center_x)]
+        output_frame = frame.copy()
 
-                        # Control if this target is better then the current best option:
-                        if score > best_score and score > 0.5:
-                            best_contour = (x, y, w, h)
-                            best_score = score
-                            can = True
-
-            output_frame = frame.copy()
-
-            # If there is a good contour print it onto the console and into the picture:
-            if best_contour:
-                x_b, y_b, w_b, h_b = best_contour
-                cv2.rectangle(output_frame, (x, y),
-                              (x_b + w_b, y_b + h_b), (0, 255, 0), 2)
-                cv2.putText(output_frame, f"Dose", (x_b, y_b - 10),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
-
-                rospy.loginfo(f"Center=({x_b+w_b//2}, {y_b+h_b//2}), width={w_b}, hight={h_b},\
-                      ratio={h_b/w_b:.2f}, probability score={best_score:.3f}")
-
-        if i < 100:
+        # Brake after a short time:
+        if i < 30:
             i += 1
-        elif i >= 100:
-            rospy.loginfo("Reached target 100")
-            if x_b is not None:
-                break
-            else:
+        elif i >= 30:
+            if can is False:
+                rospy.loginfo("Reached target 30\r")
                 cap.release()
                 cv2.destroyAllWindows()
                 cv2.waitKey(2)
 
-                return False, False, False
+                return False
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
@@ -199,10 +127,10 @@ def find_best_can(poseCan, camera_index, offsetCam, offsetLidar):
         cv2.imshow("Original", frame)
         cv2.imshow("Ergebnis", output_frame)
 
+        rospy.sleep(1)
+
     # Close the openCV windows:
     cap.release()
     cv2.destroyAllWindows()
 
     rospy.loginfo(f'state of can: {can}')
-
-    return x_b+w_b//2, y_b+h_b//2, can
