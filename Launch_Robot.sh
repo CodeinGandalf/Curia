@@ -10,4 +10,4 @@ sudo pigpiod
 source ~/Curia/workspace/devel/setup.bash
 
 # ROS-Launch starten
-roslaunch dose_samler dose_sammler.launch
+roslaunch dose_sammler dose_sammler.launch
