@@ -25,23 +25,24 @@ ENCODER_PINS = {
 }
 
 # Tick counter:
+import threading
 ticks = {"FL": 0, "FR": 0, "RL": 0, "RR": 0}
+ticks_lock = threading.Lock()
 
 
 def encoder_callback_FL(pin_a, pin_b, last_states_FL, wheel_name="FL"):
     def _callback(channel):
-        global ticks
-        a = GPIO.input(pin_a)
-        b = GPIO.input(pin_b)
+        a, b = GPIO.input(pin_a), GPIO.input(pin_b)
         current_state = (a << 1) | b
-
+        
         transition = (last_states_FL[0] << 2) | current_state
 
         # Alle gueltigen Uebergaenge mit Richtung
-        if transition in [0b0001, 0b0111, 0b1110, 0b1000]:
-            ticks[wheel_name] += 1
-        elif transition in [0b0010, 0b0100, 0b1101, 0b1011]:
-            ticks[wheel_name] -= 1
+        with ticks_lock:
+            if transition in [0b0001, 0b0111, 0b1110, 0b1000]:
+                ticks[wheel_name] += 1
+            elif transition in [0b0010, 0b0100, 0b1101, 0b1011]:
+                ticks[wheel_name] -= 1
 
         last_states_FL[0] = current_state
     return _callback
@@ -49,18 +50,17 @@ def encoder_callback_FL(pin_a, pin_b, last_states_FL, wheel_name="FL"):
 
 def encoder_callback_FR(pin_a, pin_b, last_states_FR, wheel_name="FR"):
     def _callback(channel):
-        global ticks
-        a = GPIO.input(pin_a)
-        b = GPIO.input(pin_b)
+        a, b = GPIO.input(pin_a), GPIO.input(pin_b)
         current_state = (a << 1) | b
 
         transition = (last_states_FR[0] << 2) | current_state
 
         # Alle gueltigen Uebergaenge mit Richtung
-        if transition in [0b0001, 0b0111, 0b1110, 0b1000]:
-            ticks[wheel_name] += 1
-        elif transition in [0b0010, 0b0100, 0b1101, 0b1011]:
-            ticks[wheel_name] -= 1
+        with ticks_lock:
+            if transition in [0b0001, 0b0111, 0b1110, 0b1000]:
+                ticks[wheel_name] += 1
+            elif transition in [0b0010, 0b0100, 0b1101, 0b1011]:
+                ticks[wheel_name] -= 1
 
         last_states_FR[0] = current_state
     return _callback
@@ -68,18 +68,17 @@ def encoder_callback_FR(pin_a, pin_b, last_states_FR, wheel_name="FR"):
     
 def encoder_callback_RL(pin_a, pin_b, last_states_RL, wheel_name="RL"):
     def _callback(channel):
-        global ticks
-        a = GPIO.input(pin_a)
-        b = GPIO.input(pin_b)
+        a, b = GPIO.input(pin_a), GPIO.input(pin_b)
         current_state = (a << 1) | b
 
         transition = (last_states_RL[0] << 2) | current_state
 
         # Alle gueltigen Uebergaenge mit Richtung
-        if transition in [0b0001, 0b0111, 0b1110, 0b1000]:
-            ticks[wheel_name] += 1
-        elif transition in [0b0010, 0b0100, 0b1101, 0b1011]:
-            ticks[wheel_name] -= 1
+        with ticks_lock:
+            if transition in [0b0001, 0b0111, 0b1110, 0b1000]:
+                ticks[wheel_name] += 1
+            elif transition in [0b0010, 0b0100, 0b1101, 0b1011]:
+                ticks[wheel_name] -= 1
 
         last_states_RL[0] = current_state
     return _callback
@@ -87,18 +86,17 @@ def encoder_callback_RL(pin_a, pin_b, last_states_RL, wheel_name="RL"):
 
 def encoder_callback_RR(pin_a, pin_b, last_states_RR, wheel_name="RR"):
     def _callback(channel):
-        global ticks
-        a = GPIO.input(pin_a)
-        b = GPIO.input(pin_b)
+        a, b = GPIO.input(pin_a), GPIO.input(pin_b)
         current_state = (a << 1) | b
 
         transition = (last_states_RR[0] << 2) | current_state
 
         # Alle gueltigen Uebergaenge mit Richtung
-        if transition in [0b0001, 0b0111, 0b1110, 0b1000]:
-            ticks[wheel_name] += 1
-        elif transition in [0b0010, 0b0100, 0b1101, 0b1011]:
-            ticks[wheel_name] -= 1
+        with ticks_lock:
+            if transition in [0b0001, 0b0111, 0b1110, 0b1000]:
+                ticks[wheel_name] += 1
+            elif transition in [0b0010, 0b0100, 0b1101, 0b1011]:
+                ticks[wheel_name] -= 1
 
         last_states_RR[0] = current_state
     return _callback
