@@ -41,9 +41,6 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '../src'))
 import searchCan as SC
 import checkIfCan as CIC
 
-# Globale Variable, um auf die Daten zuzugreifen
-current_wheel_speeds = {}
-
 
 # Def callback function for the keys:
 def key_callback(msg):
