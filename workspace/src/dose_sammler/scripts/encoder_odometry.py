@@ -27,32 +27,81 @@ ENCODER_PINS = {
 # Tick counter:
 ticks = {"FL": 0, "FR": 0, "RL": 0, "RR": 0}
 
-last_states = {}  # Dictionary to store last state for each wheel
 
-
-def encoder_callback(pin_a, pin_b, wheel_name):
+def encoder_callback_FL(pin_a, pin_b, last_states_FL, wheel_name="FL"):
     def _callback(channel):
-        global ticks, last_states
+        global ticks
         a = GPIO.input(pin_a)
         b = GPIO.input(pin_b)
-        current_state = (a << 1) | b  # Kombiniert A und B zu einem Zustand (00, 01, 10, 11)
+        current_state = (a << 1) | b
 
-        # Hole vorherigen Zustand
-        last_state = last_states.get(wheel_name, 0)
+        transition = (last_states_FL[0] << 2) | current_state
 
-        # Kombiniere zu einem Übergangscode (4 Bit)
-        transition = (last_state << 2) | current_state
-
-        # Alle gültigen Übergänge mit Richtung
-        if transition in [0b0001, 0b0111, 0b1110, 0b1000]:  # Vorwärts
+        # Alle gueltigen Uebergaenge mit Richtung
+        if transition in [0b0001, 0b0111, 0b1110, 0b1000]:
             ticks[wheel_name] += 1
-        elif transition in [0b0010, 0b0100, 0b1101, 0b1011]:  # Rückwärts
+        elif transition in [0b0010, 0b0100, 0b1101, 0b1011]:
             ticks[wheel_name] -= 1
-        # Sonst: Ungültiger Übergang oder Entprellung
 
-        last_states[wheel_name] = current_state  # Zustand merken
+        last_states_FL[0] = current_state
     return _callback
 
+
+def encoder_callback_FR(pin_a, pin_b, last_states_FR, wheel_name="FR"):
+    def _callback(channel):
+        global ticks
+        a = GPIO.input(pin_a)
+        b = GPIO.input(pin_b)
+        current_state = (a << 1) | b
+
+        transition = (last_states_FR[0] << 2) | current_state
+
+        # Alle gueltigen Uebergaenge mit Richtung
+        if transition in [0b0001, 0b0111, 0b1110, 0b1000]:
+            ticks[wheel_name] += 1
+        elif transition in [0b0010, 0b0100, 0b1101, 0b1011]:
+            ticks[wheel_name] -= 1
+
+        last_states_FR[0] = current_state
+    return _callback
+
+    
+def encoder_callback_RL(pin_a, pin_b, last_states_RL, wheel_name="RL"):
+    def _callback(channel):
+        global ticks
+        a = GPIO.input(pin_a)
+        b = GPIO.input(pin_b)
+        current_state = (a << 1) | b
+
+        transition = (last_states_RL[0] << 2) | current_state
+
+        # Alle gueltigen Uebergaenge mit Richtung
+        if transition in [0b0001, 0b0111, 0b1110, 0b1000]:
+            ticks[wheel_name] += 1
+        elif transition in [0b0010, 0b0100, 0b1101, 0b1011]:
+            ticks[wheel_name] -= 1
+
+        last_states_RL[0] = current_state
+    return _callback
+
+
+def encoder_callback_RR(pin_a, pin_b, last_states_RR, wheel_name="RR"):
+    def _callback(channel):
+        global ticks
+        a = GPIO.input(pin_a)
+        b = GPIO.input(pin_b)
+        current_state = (a << 1) | b
+
+        transition = (last_states_RR[0] << 2) | current_state
+
+        # Alle gueltigen Uebergaenge mit Richtung
+        if transition in [0b0001, 0b0111, 0b1110, 0b1000]:
+            ticks[wheel_name] += 1
+        elif transition in [0b0010, 0b0100, 0b1101, 0b1011]:
+            ticks[wheel_name] -= 1
+
+        last_states_RR[0] = current_state
+    return _callback
 
 
 # Define the function to setup the encoder:
@@ -63,11 +112,27 @@ def setup_encoders():
         b_pin = ENCODER_PINS[f"{wheel}_B"]
         GPIO.setup(a_pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
         GPIO.setup(b_pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-        GPIO.add_event_detect(a_pin, GPIO.BOTH, callback=encoder_callback(a_pin, b_pin, wheel))
-        GPIO.add_event_detect(b_pin, GPIO.BOTH, callback=encoder_callback(a_pin, b_pin, wheel))
-        a = GPIO.input(a_pin)
-        b = GPIO.input(b_pin)
-        last_states[wheel] = (a << 1) | b
+
+    state_FL = [00]
+    state_FR = [00]
+    state_RL = [00]
+    state_RR = [00]
+    cb_FL = encoder_callback_FL(ENCODER_PINS["FL_A"], ENCODER_PINS["FL_B"], state_FL)
+    cb_FR = encoder_callback_FR(ENCODER_PINS["FR_A"], ENCODER_PINS["FR_B"], state_FR)
+    cb_RL = encoder_callback_RL(ENCODER_PINS["RL_A"], ENCODER_PINS["RL_B"], state_RL)
+    cb_RR = encoder_callback_RR(ENCODER_PINS["RR_A"], ENCODER_PINS["RR_B"], state_RR)
+
+    GPIO.add_event_detect(ENCODER_PINS["FL_A"], GPIO.BOTH, callback=cb_FL)
+    GPIO.add_event_detect(ENCODER_PINS["FL_B"], GPIO.BOTH, callback=cb_FL)
+
+    GPIO.add_event_detect(ENCODER_PINS["FR_A"], GPIO.BOTH, callback=cb_FR)
+    GPIO.add_event_detect(ENCODER_PINS["FR_B"], GPIO.BOTH, callback=cb_FR)
+
+    GPIO.add_event_detect(ENCODER_PINS["RL_A"], GPIO.BOTH, callback=cb_RL)
+    GPIO.add_event_detect(ENCODER_PINS["RL_B"], GPIO.BOTH, callback=cb_RL)
+
+    GPIO.add_event_detect(ENCODER_PINS["RR_A"], GPIO.BOTH, callback=cb_RR)
+    GPIO.add_event_detect(ENCODER_PINS["RR_B"], GPIO.BOTH, callback=cb_RR)
 
 
 # Define the function to calculate the odometry:

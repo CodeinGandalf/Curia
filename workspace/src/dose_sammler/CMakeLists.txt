@@ -25,6 +25,7 @@ target_link_libraries(encoder_odometry ${catkin_LIBRARIES} pigpio)
 catkin_install_python(PROGRAMS
   scripts/main.py
   scripts/keyboard_control.py
+  scripts/encoder_odometry.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
