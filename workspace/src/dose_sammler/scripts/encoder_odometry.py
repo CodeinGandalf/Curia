@@ -69,7 +69,7 @@ def setup_encoders():
         # Use lambda to pass wheel_name and dir to the callback
         GPIO.add_event_detect(
             a_pin, GPIO.RISING,
-            callback=lambda channel, w=wheel, d=dir: encoder_callback(channel, w, d)
+            callback=lambda channel, w=wheel: encoder_callback(channel, w)
         )
 
 
