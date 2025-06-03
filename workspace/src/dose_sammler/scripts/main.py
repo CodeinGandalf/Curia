@@ -180,8 +180,8 @@ def set_servo_pwm(pi, Pin, pwm_value):
     steps = int((pwm_value - pwm) / step_size)
 
     # Process 9 steps and then set the PWM value to the requested PWM value:
-    for m in range(steps - 1):
-        pwm_step = int(pwm + step_size)
+    for m in range(step_size - 1):
+        pwm_step = int(pwm + steps)
         pi.set_servo_pulsewidth(Pin, pwm_step)
         rospy.sleep(0.2)
 
