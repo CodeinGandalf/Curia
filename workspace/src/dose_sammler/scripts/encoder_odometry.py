@@ -15,13 +15,14 @@ from tf.transformations import quaternion_from_euler
 import tf2_ros
 
 from sensor_msgs.msg import JointState
+from std_msgs.msg import Int32MultiArray
 
 # Define the pins for the encoder:
 ENCODER_PINS = {
-    "FL_A": 19, "FL_B": 13,
-    "FR_A": 11, "FR_B": 0,
-    "RL_A": 22, "RL_B": 27,
-    "RR_A": 24, "RR_B": 23
+    "FL_A": 22, "FL_B": 27,
+    "FR_A": 24, "FR_B": 23,
+    "RL_A": 19, "RL_B": 13,
+    "RR_A": 11, "RR_B": 0
 }
 
 # Tick counter:
@@ -29,121 +30,52 @@ import threading
 ticks = {"FL": 0, "FR": 0, "RL": 0, "RR": 0}
 ticks_lock = threading.Lock()
 
+# Store direction for each wheel (default to 1)
+encoder_dir = {"FL": 1, "FR": 1, "RL": 1, "RR": 1}
+encoder_dir_lock = threading.Lock()
 
-"""def encoder_callback_FL(pin_a, pin_b, last_states_FL, wheel_name="FL"):
-    def _callback(channel):
-        a, b = GPIO.input(pin_a), GPIO.input(pin_b)
-        current_state = (a << 1) | b
-        
-        transition = (last_states_FL[0] << 2) | current_state
+# Callback for direction topic
+def dir_callback(msg):
+    # msg should be a dictionary-like message, e.g. {'FL': 1, 'FR': 1, 'RL': -1, 'RR': -1}
+    # For example, use std_msgs/Int32MultiArray or a custom message
+    with encoder_dir_lock:
+        encoder_dir['FL'] = msg.data[0]
+        encoder_dir['FR'] = msg.data[1]
+        encoder_dir['RL'] = msg.data[2]
+        encoder_dir['RR'] = msg.data[3]
 
-        # Alle gueltigen Uebergaenge mit Richtung
-        with ticks_lock:
-            if transition in [0b0001, 0b0111, 0b1110, 0b1000]:
-                ticks[wheel_name] += 1
-            elif transition in [0b0010, 0b0100, 0b1101, 0b1011]:
-                ticks[wheel_name] -= 1
+# Unified encoder callback
+def encoder_callback(channel, wheel_name):
+    # Only increment/decrement on rising edge of encoder A
+    with encoder_dir_lock:
+        dir = encoder_dir[wheel_name]
+    with ticks_lock:
+        ticks[wheel_name] += dir
 
-        last_states_FL[0] = current_state
-    return _callback"""
-
-def encoder_callback_FL(pin_a, pin_b, last_states_FL, wheel_name="FL"):
-    def _callback(channel):
-        
-        with ticks_lock:
-            ticks[wheel_name] += 1
-
-    return _callback
+# -------------- UPDATED SETUP FUNCTION --------------
 
 
-def encoder_callback_FR(pin_a, pin_b, last_states_FR, wheel_name="FR"):
-    def _callback(channel):
-        a, b = GPIO.input(pin_a), GPIO.input(pin_b)
-        current_state = (a << 1) | b
-
-        transition = (last_states_FR[0] << 2) | current_state
-
-        # Alle gueltigen Uebergaenge mit Richtung
-        with ticks_lock:
-            if transition in [0b0001, 0b0111, 0b1110, 0b1000]:
-                ticks[wheel_name] += 1
-            elif transition in [0b0010, 0b0100, 0b1101, 0b1011]:
-                ticks[wheel_name] -= 1
-
-        last_states_FR[0] = current_state
-    return _callback
-
-    
-def encoder_callback_RL(pin_a, pin_b, last_states_RL, wheel_name="RL"):
-    def _callback(channel):
-        a, b = GPIO.input(pin_a), GPIO.input(pin_b)
-        current_state = (a << 1) | b
-
-        transition = (last_states_RL[0] << 2) | current_state
-
-        # Alle gueltigen Uebergaenge mit Richtung
-        with ticks_lock:
-            if transition in [0b0001, 0b0111, 0b1110, 0b1000]:
-                ticks[wheel_name] += 1
-            elif transition in [0b0010, 0b0100, 0b1101, 0b1011]:
-                ticks[wheel_name] -= 1
-
-        last_states_RL[0] = current_state
-    return _callback
-
-
-def encoder_callback_RR(pin_a, pin_b, last_states_RR, wheel_name="RR"):
-    def _callback(channel):
-        a, b = GPIO.input(pin_a), GPIO.input(pin_b)
-        current_state = (a << 1) | b
-
-        transition = (last_states_RR[0] << 2) | current_state
-
-        # Alle gueltigen Uebergaenge mit Richtung
-        with ticks_lock:
-            if transition in [0b0001, 0b0111, 0b1110, 0b1000]:
-                ticks[wheel_name] += 1
-            elif transition in [0b0010, 0b0100, 0b1101, 0b1011]:
-                ticks[wheel_name] -= 1
-
-        last_states_RR[0] = current_state
-    return _callback
-
-
-# Define the function to setup the encoder:
 def setup_encoders():
     GPIO.setmode(GPIO.BCM)
-    for wheel in ["FL", "FR", "RL", "RR"]:
-        a_pin = ENCODER_PINS[f"{wheel}_A"]
-        b_pin = ENCODER_PINS[f"{wheel}_B"]
+    # Define wheel info: (A pin, direction)
+    wheel_info = {
+        "FL": (ENCODER_PINS["FL_A"],  1),
+        "FR": (ENCODER_PINS["FR_A"],  1),
+        "RL": (ENCODER_PINS["RL_A"], -1),
+        "RR": (ENCODER_PINS["RR_A"], -1),
+    }
+    for wheel, (a_pin, dir) in wheel_info.items():
         GPIO.setup(a_pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-        GPIO.setup(b_pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-
-    state_FL = [00]
-    state_FR = [00]
-    state_RL = [00]
-    state_RR = [00]
-    cb_FL = encoder_callback_FL(ENCODER_PINS["FL_A"], ENCODER_PINS["FL_B"], state_FL)
-    cb_FR = encoder_callback_FR(ENCODER_PINS["FR_A"], ENCODER_PINS["FR_B"], state_FR)
-    cb_RL = encoder_callback_RL(ENCODER_PINS["RL_A"], ENCODER_PINS["RL_B"], state_RL)
-    cb_RR = encoder_callback_RR(ENCODER_PINS["RR_A"], ENCODER_PINS["RR_B"], state_RR)
-
-    GPIO.add_event_detect(ENCODER_PINS["FL_A"], GPIO.RISING, callback=cb_FL)
-    #GPIO.add_event_detect(ENCODER_PINS["FL_B"], GPIO.BOTH, callback=cb_FL)
-
-    GPIO.add_event_detect(ENCODER_PINS["FR_A"], GPIO.BOTH, callback=cb_FR)
-    GPIO.add_event_detect(ENCODER_PINS["FR_B"], GPIO.BOTH, callback=cb_FR)
-
-    GPIO.add_event_detect(ENCODER_PINS["RL_A"], GPIO.BOTH, callback=cb_RL)
-    GPIO.add_event_detect(ENCODER_PINS["RL_B"], GPIO.BOTH, callback=cb_RL)
-
-    GPIO.add_event_detect(ENCODER_PINS["RR_A"], GPIO.BOTH, callback=cb_RR)
-    GPIO.add_event_detect(ENCODER_PINS["RR_B"], GPIO.BOTH, callback=cb_RR)
+        # Use lambda to pass wheel_name and dir to the callback
+        GPIO.add_event_detect(
+            a_pin, GPIO.RISING,
+            callback=lambda channel, w=wheel, d=dir: encoder_callback(channel, w, d)
+        )
 
 
 # Define the function to calculate the odometry:
 def calculate_odometry(ticks_delta, dt):
-    TICKS_PER_REV = 2797
+    TICKS_PER_REV = 700 #2797
     WHEEL_RADIUS = 0.044
     L = 0.244
     W = 0.132
@@ -171,6 +103,9 @@ def main():
     joint_pub = rospy.Publisher("/wheel_speeds", JointState, queue_size=10)
     odom_pub = rospy.Publisher("/odom", Odometry, queue_size=50)
     tf_broadcaster = tf2_ros.TransformBroadcaster()
+
+    # Subscribe to direction topic (example: Int32MultiArray)
+    rospy.Subscriber("/encoder_direction", Int32MultiArray, dir_callback)
 
     # Setup the encoders:
     setup_encoders()
