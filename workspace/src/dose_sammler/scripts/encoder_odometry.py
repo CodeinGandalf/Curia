@@ -19,10 +19,10 @@ from sensor_msgs.msg import JointState
 
 # Define the pins for the encoder:
 ENCODER_PINS = {
-    "FL_A": 22, "FL_B": 27,
-    "FR_A": 24, "FR_B": 23,
-    "RL_A": 19, "RL_B": 13,
-    "RR_A": 11, "RR_B": 0
+    "BL_A": 22, "BL_B": 27,
+    "BR_A": 24, "BR_B": 23,
+    "FL_A": 19, "FL_B": 13,
+    "FR_A": 11, "FR_B": 0
 }
 
 # Tick counter:
