@@ -128,7 +128,7 @@ def setup_encoders():
     cb_RL = encoder_callback_RL(ENCODER_PINS["RL_A"], ENCODER_PINS["RL_B"], state_RL)
     cb_RR = encoder_callback_RR(ENCODER_PINS["RR_A"], ENCODER_PINS["RR_B"], state_RR)
 
-    GPIO.add_event_detect(ENCODER_PINS["FL_A"], GPIO.HIGH, callback=cb_FL)
+    GPIO.add_event_detect(ENCODER_PINS["FL_A"], GPIO.RISING, callback=cb_FL)
     #GPIO.add_event_detect(ENCODER_PINS["FL_B"], GPIO.BOTH, callback=cb_FL)
 
     GPIO.add_event_detect(ENCODER_PINS["FR_A"], GPIO.BOTH, callback=cb_FR)
