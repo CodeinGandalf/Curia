@@ -160,7 +160,7 @@ def set_motor_pwm(pca, channel_forward, channel_backward, pwm_value, MAX_PWM):
 # Define the function for the servo pwm:
 def set_servo_pwm(pi, Pin, pwm_value):
     # Work with 10 steps to smooth the servo movement:
-    steps = 10
+    step_size = 10
 
     # Check what servo movement should be generated (four possible states cause there are 2 servos with 2 possible states):
     if pwm_value == 1100:
@@ -177,12 +177,12 @@ def set_servo_pwm(pi, Pin, pwm_value):
         return
 
     # Calculate the step size for the 10 steps:
-    step_size = (pwm_value - pwm) / steps
+    steps = (pwm_value - pwm) / step_size
 
     # Process 9 steps and then set the PWM value to the requested PWM value:
     for m in range(steps - 1):
-        pwm = pwm + step_size
-        pi.set_servo_pulsewidth(Pin, pwm)
+        pwm_step = pwm + step_size
+        pi.set_servo_pulsewidth(Pin, pwm_step)
         rospy.sleep(0.2)
 
     pi.set_servo_pulsewidth(Pin, pwm_value)
@@ -558,9 +558,13 @@ def main():
         if diff_dx != 0 or diff_dy != 0 or diff_drot != 0 or dx == 0 or dy == 0 or drot == 0:
             wheel_speeds = mecanum_inv_kinematics(dx, dy, drot)
         
-        # Update the PWM values for the servos:
-        pwm_gripper = dGripper
-        pwm_elevator = dElevator
+        # Update the PWM values for the servos only if changed:
+        if pwm_gripper != dGripper:
+            pwm_gripper = dGripper
+            set_servo_pwm(pi, PWM_PIN_GRIPPER, pwm_gripper)
+        if pwm_elevator != dElevator:
+            pwm_elevator = dElevator
+            set_servo_pwm(pi, PWM_PIN_ELEVATOR, pwm_elevator)
 
         # Current motor speeds calculated with the encoder data in rad/s:
         trueSpeed_FL = current_wheel_speeds.get('FL', 0.0)
@@ -571,9 +575,7 @@ def main():
         # Update the engine targets:
         driveEngines(wheel_speeds, trueSpeed_FL, trueSpeed_FR, trueSpeed_BL, trueSpeed_BR, MAX_PWM, pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR)
 
-        # Update the PWM values for the servos:
-        set_servo_pwm(pi, PWM_PIN_GRIPPER, pwm_gripper)
-        set_servo_pwm(pi, PWM_PIN_ELEVATOR, pwm_elevator)
+        
 
         rate.sleep()
 
