@@ -160,17 +160,21 @@ def set_motor_pwm(pca, channel_forward, channel_backward, pwm_value, MAX_PWM):
 # Define the function for the servo pwm:
 def set_servo_pwm(pi, Pin, pwm_value):
     # Work with 10 steps to smooth the servo movement:
-    step_size = 10
+    
 
     # Check what servo movement should be generated (four possible states cause there are 2 servos with 2 possible states):
     if pwm_value == 1100:
         pwm = 1600
+        step_size = -10
     elif pwm_value == 1600:
         pwm = 1100
+        step_size = 10
     elif pwm_value == 1318:
         pwm = 2400
+        step_size = -10
     elif pwm_value == 2400:
         pwm = 1318
+        step_size = 10
     else:
         # If there is an other PWM value then known write it onto the pin without smoothing it:
         pi.set_servo_pulsewidth(Pin, pwm_value)
@@ -180,10 +184,10 @@ def set_servo_pwm(pi, Pin, pwm_value):
     steps = int((pwm_value - pwm) / step_size)
 
     # Process 9 steps and then set the PWM value to the requested PWM value:
-    for m in range(step_size - 1):
-        pwm = int(pwm + steps)
+    for m in range(steps - 1):
+        pwm = int(pwm + step_size)
         pi.set_servo_pulsewidth(Pin, pwm)
-        rospy.sleep(0.2)
+        rospy.sleep(0.05)
 
     pi.set_servo_pulsewidth(Pin, pwm_value)
     
