@@ -177,7 +177,7 @@ def set_servo_pwm(pi, Pin, pwm_value):
         return
 
     # Calculate the step size for the 10 steps:
-    steps = (pwm_value - pwm) / step_size
+    steps = int((pwm_value - pwm) / step_size)
 
     # Process 9 steps and then set the PWM value to the requested PWM value:
     for m in range(steps - 1):
