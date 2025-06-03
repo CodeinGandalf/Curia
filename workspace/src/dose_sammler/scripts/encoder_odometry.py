@@ -30,7 +30,7 @@ ticks = {"FL": 0, "FR": 0, "RL": 0, "RR": 0}
 ticks_lock = threading.Lock()
 
 
-"""def encoder_callback_FL(pin_a, pin_b, last_states_FL, wheel_name="FL"):
+def encoder_callback_FL(pin_a, pin_b, last_states_FL, wheel_name="FL"):
     def _callback(channel):
         a, b = GPIO.input(pin_a), GPIO.input(pin_b)
         current_state = (a << 1) | b
@@ -45,15 +45,15 @@ ticks_lock = threading.Lock()
                 ticks[wheel_name] -= 1
 
         last_states_FL[0] = current_state
-    return _callback"""
+    return _callback
 
-def encoder_callback_FL(pin_a, pin_b, last_states_FL, wheel_name="FL"):
+"""def encoder_callback_FL(pin_a, pin_b, last_states_FL, wheel_name="FL"):
     def _callback(channel):
         
         with ticks_lock:
             ticks[wheel_name] += 1
 
-    return _callback
+    return _callback"""
 
 
 def encoder_callback_FR(pin_a, pin_b, last_states_FR, wheel_name="FR"):
