@@ -19,8 +19,8 @@ from sensor_msgs.msg import JointState
 
 # Define the pins for the encoder:
 ENCODER_PINS = {
-    "BL_A": 22, "BL_B": 27,
-    "BR_A": 24, "BR_B": 23,
+    "RL_A": 22, "RL_B": 27,
+    "RR_A": 24, "RR_B": 23,
     "FL_A": 19, "FL_B": 13,
     "FR_A": 11, "FR_B": 0
 }
@@ -61,8 +61,8 @@ def setup_encoders():
     wheel_info = {
         "FL": (ENCODER_PINS["FL_A"],  1),
         "FR": (ENCODER_PINS["FR_A"],  1),
-        "BL": (ENCODER_PINS["BL_A"], -1),
-        "BR": (ENCODER_PINS["BR_A"], -1),
+        "RL": (ENCODER_PINS["RL_A"], -1),
+        "RR": (ENCODER_PINS["RR_A"], -1),
     }
     for wheel, (a_pin, dir) in wheel_info.items():
         GPIO.setup(a_pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
@@ -75,9 +75,9 @@ def setup_encoders():
 
 # Define the function to calculate the odometry:
 def calculate_odometry(ticks_delta, dt):
-    TICKS_PER_REV = 700
+    TICKS_PER_REV = 700 #2797
     WHEEL_RADIUS = 0.044
-    L = 0.250
+    L = 0.244
     W = 0.132
 
     w = {}
