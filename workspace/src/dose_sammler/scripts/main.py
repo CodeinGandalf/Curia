@@ -147,6 +147,8 @@ def set_motor_pwm(pca, channel_forward, channel_backward, pwm_value, MAX_PWM):
 
     if MAX_PWM > limit:
         MAX_PWM = limit
+    elif -MAX_PWM > limit:
+        MAX_PWM = -limit
 
     # Clip the PWM value if needed:
     pwm_value = int(np.clip(pwm_value, -MAX_PWM, MAX_PWM))
