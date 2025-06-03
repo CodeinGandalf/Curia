@@ -46,4 +46,6 @@
 
   <node pkg="dose_sammler" type="encoder_odometry.py" name="encoder_odom_node" output="screen" />
   
+  <!-- node pkg="dose_sammler" type="frontier_exploration.py" name="frontier_exploration" output="screen" / -->
+  
 </launch>

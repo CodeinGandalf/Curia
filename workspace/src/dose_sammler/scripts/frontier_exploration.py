@@ -11,7 +11,7 @@ from path_planner import PathPlanner
 from frontier_search import FrontierSearch
 from nav_msgs.msg import OccupancyGrid, Path, GridCells, Odometry
 from geometry_msgs.msg import Pose, Point, Quaternion
-from lab4.msg import FrontierList
+from dose_sammler.msg import FrontierList
 from tf import TransformListener
 from tf.transformations import euler_from_quaternion
 
@@ -24,7 +24,7 @@ class FrontierExploration:
 
         # Set if in debug mode
         self.is_in_debug_mode = (
-            rospy.has_param("~debug") and rospy.get_param("~debug") == "true"
+            rospy.has_param("~debug") and rospy.get_param("~debug")
         )
 
         # Publishers
@@ -69,7 +69,7 @@ class FrontierExploration:
             (trans, rot) = self.tf_listener.lookupTransform(
                 "/map", "/base_footprint", rospy.Time(0)
             )
-        except:
+        except Exception:
             return
 
         self.pose = Pose(
@@ -96,7 +96,7 @@ class FrontierExploration:
             os.makedirs(os.path.dirname(map_path))
 
         # Run map_saver
-        subprocess.call(["rosrun", "map_server", "map_saver", "-f", map_path])
+        subprocess.run(["rosrun", "map_server", "map_saver", "-f", map_path], check=True)
 
         self.update_odometry()
 
@@ -110,8 +110,17 @@ class FrontierExploration:
         roll, pitch, yaw = euler_from_quaternion(
             [orientation.x, orientation.y, orientation.z, orientation.w]
         )
-        with open(os.path.join(package_path, "map/pose.txt"), "w") as f:
-            f.write(f"{position.x} {position.y} {position.z} {yaw} {pitch} {roll}\n")
+        import tempfile
+
+        temp_file = tempfile.NamedTemporaryFile(delete=False, mode="w", dir=os.path.join(package_path, "map"), prefix="pose_", suffix=".txt")
+        try:
+            temp_file.write(f"{position.x} {position.y} {position.z} {yaw} {pitch} {roll}\n")
+            temp_file.close()
+            os.rename(temp_file.name, os.path.join(package_path, "map/pose.txt"))
+        except Exception as e:
+            rospy.logerr(f"Failed to write pose file atomically: {e}")
+            if os.path.exists(temp_file.name):
+                os.remove(temp_file.name)
 
     @staticmethod
     def get_top_frontiers(frontiers, n):
@@ -213,8 +222,8 @@ class FrontierExploration:
                 cspace, cost_map, start, goal
             )
 
-            # If in debug mode, append start and goal
-            if self.is_in_debug_mode:
+            # If in debug mode, append start and goal if they are valid
+            if self.is_in_debug_mode and start is not None and goal is not None:
                 starts.append(start)
                 goals.append(goal)
 
@@ -253,6 +262,7 @@ class FrontierExploration:
         rate = rospy.Rate(20)  # Hz
         while not rospy.is_shutdown():
             if self.pose is None or self.map is None:
+                rate.sleep()
                 continue
 
             # Get the start position of the robot
@@ -275,6 +285,7 @@ class FrontierExploration:
             self.explore_frontier(frontier_list)
 
             rate.sleep()
-
+# Entry point of the script: initializes the FrontierExploration class and starts the exploration process.
 if __name__ == "__main__":
+    FrontierExploration().run()
     FrontierExploration().run()

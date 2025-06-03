@@ -8,26 +8,42 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   sensor_msgs
   geometry_msgs
+  nav_msgs
   tf2_ros
-  message_runtime
+  message_generation
   cv_bridge
 )
 
+## Declare ROS messages
+add_message_files(
+  FILES
+  Frontier.msg
+  FrontierList.msg
+)
+
+## Generate added messages
+generate_messages(
+  DEPENDENCIES
+  std_msgs
+  geometry_msgs
+)
+
 ## Declare catkin package
-catkin_package()
+catkin_package(
+  CATKIN_DEPENDS message_runtime std_msgs geometry_msgs nav_msgs
+)
 
 ## Include directories
 include_directories(${catkin_INCLUDE_DIRS})
-
-## Add the C++ executable for encoder_odometry (commented out for Python version)
-# add_executable(encoder_odometry scripts/encoder_odometry.cpp)
-# target_link_libraries(encoder_odometry ${catkin_LIBRARIES} pigpio)
 
 ## Install your Python executable scripts
 catkin_install_python(PROGRAMS
   scripts/main.py
   scripts/keyboard_control.py
   scripts/encoder_odometry.py
+  #scripts/frontier_exploration.py
+  #scripts/frontier_search.py
+  #scripts/path_planner.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
