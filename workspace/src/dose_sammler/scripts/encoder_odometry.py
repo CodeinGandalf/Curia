@@ -236,7 +236,7 @@ def main():
         joint_state = JointState()
         joint_state.header.stamp = now
         joint_state.name = ['FL', 'FR', 'RL', 'RR']
-        joint_state.position = [0.0, 0.0, 0.0, 0.0]
+        joint_state.position = [ticks['FL'], ticks['FR'], ticks['RL'], ticks['RR']]
         joint_state.velocity = [w['FL'], w['FR'], w['RL'], w['RR']]
         joint_state.effort = [0.0, 0.0, 0.0, 0.0]
 
