@@ -523,10 +523,10 @@ def main():
     # Calculate the wheel_speeds with the default values:
     wheel_speeds = mecanum_inv_kinematics(dx, dy, drot)
 
-    sign_FL = np.sign(wheel_speeds[0, 0])
-    sign_FR = np.sign(wheel_speeds[1, 0])
-    sign_BL = np.sign(wheel_speeds[2, 0])
-    sign_BR = np.sign(wheel_speeds[3, 0])
+    sign_FL = int(np.sign(wheel_speeds[0, 0]))
+    sign_FR = int(np.sign(wheel_speeds[1, 0]))
+    sign_BL = int(np.sign(wheel_speeds[2, 0]))
+    sign_BR = int(np.sign(wheel_speeds[3, 0]))
 
     old_sign_FL = np.sign(wheel_speeds[0, 0])
     old_sign_FR = np.sign(wheel_speeds[1, 0])
@@ -604,10 +604,10 @@ def main():
         trueSpeed_BR = current_wheel_speeds.get('BR', 0.0)
 
 
-        sign_FL = np.sign(wheel_speeds[0, 0])
-        sign_FR = np.sign(wheel_speeds[1, 0])
-        sign_BL = np.sign(wheel_speeds[2, 0])
-        sign_BR = np.sign(wheel_speeds[3, 0])
+        sign_FL = int(np.sign(wheel_speeds[0, 0]))
+        sign_FR = int(np.sign(wheel_speeds[1, 0]))
+        sign_BL = int(np.sign(wheel_speeds[2, 0]))
+        sign_BR = int(np.sign(wheel_speeds[3, 0]))
 
         new_signs = [sign_FL, sign_FR, sign_BL, sign_BR]
         old_signs = [old_sign_FL, old_sign_FR, old_sign_BL, old_sign_BR]
@@ -623,8 +623,6 @@ def main():
 
         # Update the engine targets:
         driveEngines(wheel_speeds, trueSpeed_FL, trueSpeed_FR, trueSpeed_BL, trueSpeed_BR, MAX_PWM, pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR)
-
-        
 
         rate.sleep()
 
@@ -688,10 +686,10 @@ def main():
             trueSpeed_BL = current_wheel_speeds.get('BL', 0.0)
             trueSpeed_BR = current_wheel_speeds.get('BR', 0.0)
 
-            sign_FL = np.sign(wheel_speeds[0, 0])
-            sign_FR = np.sign(wheel_speeds[1, 0])
-            sign_BL = np.sign(wheel_speeds[2, 0])
-            sign_BR = np.sign(wheel_speeds[3, 0])
+            sign_FL = int(np.sign(wheel_speeds[0, 0]))
+            sign_FR = int(np.sign(wheel_speeds[1, 0]))
+            sign_BL = int(np.sign(wheel_speeds[2, 0]))
+            sign_BR = int(np.sign(wheel_speeds[3, 0]))
 
             new_signs = [sign_FL, sign_FR, sign_BL, sign_BR]
             old_signs = [old_sign_FL, old_sign_FR, old_sign_BL, old_sign_BR]
@@ -739,10 +737,10 @@ def main():
             trueSpeed_BL = current_wheel_speeds.get('BL', 0.0)
             trueSpeed_BR = current_wheel_speeds.get('BR', 0.0)
 
-            sign_FL = np.sign(wheel_speeds[0, 0])
-            sign_FR = np.sign(wheel_speeds[1, 0])
-            sign_BL = np.sign(wheel_speeds[2, 0])
-            sign_BR = np.sign(wheel_speeds[3, 0])
+            sign_FL = int(np.sign(wheel_speeds[0, 0]))
+            sign_FR = int(np.sign(wheel_speeds[1, 0]))
+            sign_BL = int(np.sign(wheel_speeds[2, 0]))
+            sign_BR = int(np.sign(wheel_speeds[3, 0]))
 
             new_signs = [sign_FL, sign_FR, sign_BL, sign_BR]
             old_signs = [old_sign_FL, old_sign_FR, old_sign_BL, old_sign_BR]
@@ -790,10 +788,10 @@ def main():
                 trueSpeed_BL = current_wheel_speeds.get('BL', 0.0)
                 trueSpeed_BR = current_wheel_speeds.get('BR', 0.0)
 
-                sign_FL = np.sign(wheel_speeds[0, 0])
-                sign_FR = np.sign(wheel_speeds[1, 0])
-                sign_BL = np.sign(wheel_speeds[2, 0])
-                sign_BR = np.sign(wheel_speeds[3, 0])
+                sign_FL = int(np.sign(wheel_speeds[0, 0]))
+                sign_FR = int(np.sign(wheel_speeds[1, 0]))
+                sign_BL = int(np.sign(wheel_speeds[2, 0]))
+                sign_BR = int(np.sign(wheel_speeds[3, 0]))
 
                 new_signs = [sign_FL, sign_FR, sign_BL, sign_BR]
                 old_signs = [old_sign_FL, old_sign_FR, old_sign_BL, old_sign_BR]
@@ -862,10 +860,10 @@ def main():
             trueSpeed_BL = current_wheel_speeds.get('BL', 0.0)
             trueSpeed_BR = current_wheel_speeds.get('BR', 0.0)
 
-            sign_FL = np.sign(wheel_speeds[0, 0])
-            sign_FR = np.sign(wheel_speeds[1, 0])
-            sign_BL = np.sign(wheel_speeds[2, 0])
-            sign_BR = np.sign(wheel_speeds[3, 0])
+            sign_FL = int(np.sign(wheel_speeds[0, 0]))
+            sign_FR = int(np.sign(wheel_speeds[1, 0]))
+            sign_BL = int(np.sign(wheel_speeds[2, 0]))
+            sign_BR = int(np.sign(wheel_speeds[3, 0]))
 
             new_signs = [sign_FL, sign_FR, sign_BL, sign_BR]
             old_signs = [old_sign_FL, old_sign_FR, old_sign_BL, old_sign_BR]
