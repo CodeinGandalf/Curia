@@ -9,6 +9,8 @@ find_package(catkin REQUIRED COMPONENTS
   sensor_msgs
   geometry_msgs
   tf2_ros
+  message_runtime
+  cv_bridge
 )
 
 ## Declare catkin package
@@ -17,9 +19,9 @@ catkin_package()
 ## Include directories
 include_directories(${catkin_INCLUDE_DIRS})
 
-## Add the C++ executable for encoder_odometry
-add_executable(encoder_odometry scripts/encoder_odometry.cpp)
-target_link_libraries(encoder_odometry ${catkin_LIBRARIES} pigpio)
+## Add the C++ executable for encoder_odometry (commented out for Python version)
+# add_executable(encoder_odometry scripts/encoder_odometry.cpp)
+# target_link_libraries(encoder_odometry ${catkin_LIBRARIES} pigpio)
 
 ## Install your Python executable scripts
 catkin_install_python(PROGRAMS

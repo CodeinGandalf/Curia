@@ -22,7 +22,6 @@
   <exec_depend>sensor_msgs</exec_depend>
   <exec_depend>cv_bridge</exec_depend>
   <exec_depend>message_runtime</exec_depend>
-  <exec_depend>roscpp</exec_depend>
 
   <!-- Note: WiringPi is required for GPIO handling -->
   <export>
