@@ -336,7 +336,13 @@ def driveEngines(wheel_speeds, trueSpeedFL, trueSpeedFR, trueSpeedBL, trueSpeedB
     target_BL = wheel_speeds[2, 0]
     target_BR = wheel_speeds[3, 0]
 
-    # Update the setpoint and the constants for the controller:
+    max_speed = 3
+    max_pwm=65535*0.8
+
+
+
+
+    """ # Update the setpoint and the constants for the controller:
     pid_FL = PID(0.5, 0.1, 0.02, setpoint=target_FL)
     pid_FR = PID(0.5, 0.1, 0.02, setpoint=target_FR)
     pid_BL = PID(0.5, 0.1, 0.02, setpoint=target_BL)
@@ -349,10 +355,15 @@ def driveEngines(wheel_speeds, trueSpeedFL, trueSpeedFR, trueSpeedBL, trueSpeedB
     corr_BR = pid_BR(trueSpeedBR)
 
     # Calculte the correct PWM values from the PID controller:
-    pwm_fl = pid_output_to_pwm(corr_FL)
     pwm_fr = pid_output_to_pwm(corr_FR)
+    pwm_fl = pid_output_to_pwm(corr_FL)
     pwm_bl = pid_output_to_pwm(corr_BL)
-    pwm_br = pid_output_to_pwm(corr_BR)
+    pwm_br = pid_output_to_pwm(corr_BR)"""
+
+    pwm_fl  = target_FL*max_pwm/max_speed
+    pwm_bl  = target_BL*max_pwm/max_speed
+    pwm_fr  = target_FR*max_pwm/max_speed
+    pwm_br  = target_BR*max_pwm/max_speed
 
     # Print the true speed and target speed for all wheels:
     rospy.loginfo(f'True Speed FL: {trueSpeedFL:.3f}, Target: {wheel_speeds[0, 0]:.3f}\r')
