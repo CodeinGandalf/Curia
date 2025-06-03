@@ -50,10 +50,10 @@ def key_callback(msg):
         dy += 0.02
     elif key == 'e':
         rospy.loginfo("pressed rot front\r")
-        drot += 0.04
+        drot += 0.15
     elif key == 'q':
         rospy.loginfo("pressed rot back\r")
-        drot -= 0.04
+        drot -= 0.15
     elif key == 'f':
         dElevator = 2400
     elif key == 'r':
