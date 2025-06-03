@@ -11,11 +11,11 @@ import RPi.GPIO as GPIO
 import math
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import Quaternion, Twist, TransformStamped
+from std_msgs.msg import Int8MultiArray
 from tf.transformations import quaternion_from_euler
 import tf2_ros
 
 from sensor_msgs.msg import JointState
-from std_msgs.msg import Int32MultiArray
 
 # Define the pins for the encoder:
 ENCODER_PINS = {
@@ -103,9 +103,7 @@ def main():
     joint_pub = rospy.Publisher("/wheel_speeds", JointState, queue_size=10)
     odom_pub = rospy.Publisher("/odom", Odometry, queue_size=50)
     tf_broadcaster = tf2_ros.TransformBroadcaster()
-
-    # Subscribe to direction topic (example: Int32MultiArray)
-    rospy.Subscriber("/encoder_direction", Int32MultiArray, dir_callback)
+    rospy.Subscriber('/wheel_directions', Int8MultiArray, dir_callback)
 
     # Setup the encoders:
     setup_encoders()
