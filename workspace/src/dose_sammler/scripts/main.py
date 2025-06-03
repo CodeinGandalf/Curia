@@ -49,9 +49,11 @@ def key_callback(msg):
     elif key == 'd':
         dy += 0.02
     elif key == 'e':
-        drot += 0.04
+        rospy.loginfo("pressed rot front\r")
+        drot += 0.15
     elif key == 'q':
-        drot -= 0.04
+        rospy.loginfo("pressed rot back\r")
+        drot -= 0.15
     elif key == 'f':
         dElevator = 2400
     elif key == 'r':
@@ -83,7 +85,7 @@ def key_callback(msg):
 
 
 # Def func for inv kinematics
-def mecanum_inv_kinematics(vx, vy, omega, wheelRadius=0.044, L=0.244, W=0.132):
+def mecanum_inv_kinematics(vx, vy, omega, wheelRadius=0.044, L=0.250, W=0.132):
     # Matrix for the inverse kinematics:
     J_inv = 1/wheelRadius*np.matrix([
         [1, -1, -(L + W)],
@@ -340,9 +342,6 @@ def driveEngines(wheel_speeds, trueSpeedFL, trueSpeedFR, trueSpeedBL, trueSpeedB
     max_speed = 3
     max_pwm=65535*0.8
 
-
-
-
     """ # Update the setpoint and the constants for the controller:
     pid_FL = PID(0.5, 0.1, 0.02, setpoint=target_FL)
     pid_FR = PID(0.5, 0.1, 0.02, setpoint=target_FR)
@@ -361,16 +360,16 @@ def driveEngines(wheel_speeds, trueSpeedFL, trueSpeedFR, trueSpeedBL, trueSpeedB
     pwm_bl = pid_output_to_pwm(corr_BL)
     pwm_br = pid_output_to_pwm(corr_BR)"""
 
-    pwm_fl  = target_FL*max_pwm/max_speed
-    pwm_bl  = target_BL*max_pwm/max_speed
-    pwm_fr  = target_FR*max_pwm/max_speed
-    pwm_br  = target_BR*max_pwm/max_speed
+    pwm_fl = target_FL*max_pwm/max_speed
+    pwm_bl = target_BL*max_pwm/max_speed
+    pwm_fr = target_FR*max_pwm/max_speed
+    pwm_br = target_BR*max_pwm/max_speed
 
     # Print the true speed and target speed for all wheels:
-    rospy.loginfo(f'True Speed FL: {trueSpeedFL:.3f}, Target: {wheel_speeds[0, 0]:.3f}\r')
-    rospy.loginfo(f'True Speed FR: {trueSpeedFR:.3f}, Target: {wheel_speeds[1, 0]:.3f}\r')
-    rospy.loginfo(f'True Speed BL: {trueSpeedBL:.3f}, Target: {wheel_speeds[2, 0]:.3f}\r')
-    rospy.loginfo(f'True Speed BR: {trueSpeedBR:.3f}, Target: {wheel_speeds[3, 0]:.3f}\r')
+    # rospy.loginfo(f'True Speed FL: {trueSpeedFL:.3f}, Target: {wheel_speeds[0, 0]:.3f}\r')
+    # rospy.loginfo(f'True Speed FR: {trueSpeedFR:.3f}, Target: {wheel_speeds[1, 0]:.3f}\r')
+    # rospy.loginfo(f'True Speed BL: {trueSpeedBL:.3f}, Target: {wheel_speeds[2, 0]:.3f}\r')
+    # rospy.loginfo(f'True Speed BR: {trueSpeedBR:.3f}, Target: {wheel_speeds[3, 0]:.3f}\r')
 
     # Check if one of the engines has reached the max PWM value:
     if pwm_fl > MAX_PWM or pwm_fr > MAX_PWM or pwm_bl > MAX_PWM or pwm_br > MAX_PWM:
@@ -470,9 +469,6 @@ def main():
     poseCanManual = False
 
     # Define the needed variables to control the robot in the manual mode:
-    dx = 0
-    dy = 0
-    drot = 0
     old_dx = 0
     old_dy = 0
     old_drot = 0
@@ -587,6 +583,7 @@ def main():
 
         # If there was a change in the value update the wheel speeds:
         if diff_dx != 0 or diff_dy != 0 or diff_drot != 0 or dx == 0 or dy == 0 or drot == 0:
+            rospy.loginfo(f'Val drot: {drot}\r')
             wheel_speeds = mecanum_inv_kinematics(dx, dy, drot)
         
         # Update the PWM values for the servos only if changed:
