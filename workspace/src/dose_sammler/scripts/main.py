@@ -172,12 +172,6 @@ def set_servo_pwm(pi, Pin, pwm_value):
     elif pwm_value == 1600:
         pwm = 1100
         step_size = step_const
-    elif pwm_value == 1318:
-        pwm = 2400
-        step_size = -step_const
-    elif pwm_value == 2400:
-        pwm = 1318
-        step_size = step_const
     else:
         # If there is an other PWM value then known write it onto the pin without smoothing it:
         pi.set_servo_pulsewidth(Pin, pwm_value)
