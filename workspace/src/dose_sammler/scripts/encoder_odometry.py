@@ -61,8 +61,8 @@ def setup_encoders():
     wheel_info = {
         "FL": (ENCODER_PINS["FL_A"],  1),
         "FR": (ENCODER_PINS["FR_A"],  1),
-        "RL": (ENCODER_PINS["RL_A"], -1),
-        "RR": (ENCODER_PINS["RR_A"], -1),
+        "BL": (ENCODER_PINS["BL_A"], -1),
+        "BR": (ENCODER_PINS["BR_A"], -1),
     }
     for wheel, (a_pin, dir) in wheel_info.items():
         GPIO.setup(a_pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
