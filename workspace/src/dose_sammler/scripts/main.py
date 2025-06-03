@@ -24,6 +24,7 @@ import copy
 from nav_msgs.msg import OccupancyGrid
 from scipy.ndimage import label, center_of_mass
 from sensor_msgs.msg import JointState
+from std_msgs.msg import Int8MultiArray
 from simple_pid import PID
 
 # Define the path to the folder of the subfiles:
@@ -413,6 +414,7 @@ def main():
     rospy.Subscriber("/wheel_speeds", JointState, wheel_speed_callback)
     rospy.Subscriber('/keyboard_input', String, key_callback)
     rospy.Subscriber("/map", OccupancyGrid, map_callback)
+    pub = rospy.Publisher('/wheel_directions', Int8MultiArray, queue_size=10)
 
     # Define all global variables as global:
     global take_map1, take_map2, dx, dy, drot, dGripper, dElevator, poseCanManual, homePose, run, latest_map, current_wheel_speeds
@@ -424,6 +426,10 @@ def main():
     MOTOR_BR = (6, 7)
     PWM_PIN_GRIPPER = 18
     PWM_PIN_ELEVATOR = 10
+
+    msg = Int8MultiArray()
+    msg.data = [1, 1, 1, 1]
+    pub.publish(msg)    
 
     # Define the max PWM for the engines:
     MAX_PWM = 65535*0.8
@@ -517,6 +523,16 @@ def main():
     # Calculate the wheel_speeds with the default values:
     wheel_speeds = mecanum_inv_kinematics(dx, dy, drot)
 
+    sign_FL = np.sign(wheel_speeds[0, 0])
+    sign_FR = np.sign(wheel_speeds[1, 0])
+    sign_BL = np.sign(wheel_speeds[2, 0])
+    sign_BR = np.sign(wheel_speeds[3, 0])
+
+    old_sign_FL = np.sign(wheel_speeds[0, 0])
+    old_sign_FR = np.sign(wheel_speeds[1, 0])
+    old_sign_BL = np.sign(wheel_speeds[2, 0])
+    old_sign_BR = np.sign(wheel_speeds[3, 0])
+
     # Set the rate to 4 Hz:
     rate = rospy.Rate(4)
 
@@ -586,7 +602,25 @@ def main():
         trueSpeed_FR = current_wheel_speeds.get('FR', 0.0)
         trueSpeed_BL = current_wheel_speeds.get('BL', 0.0)
         trueSpeed_BR = current_wheel_speeds.get('BR', 0.0)
-        
+
+
+        sign_FL = np.sign(wheel_speeds[0, 0])
+        sign_FR = np.sign(wheel_speeds[1, 0])
+        sign_BL = np.sign(wheel_speeds[2, 0])
+        sign_BR = np.sign(wheel_speeds[3, 0])
+
+        new_signs = [sign_FL, sign_FR, sign_BL, sign_BR]
+        old_signs = [old_sign_FL, old_sign_FR, old_sign_BL, old_sign_BR]
+
+        if new_signs != old_signs:
+            msg.data = [sign_FL, sign_FR, sign_BL, sign_BR]
+            pub.publish(msg)
+
+        old_sign_FL = sign_FL
+        old_sign_FR = sign_FR
+        old_sign_BL = sign_BL
+        old_sign_BR = sign_BR
+
         # Update the engine targets:
         driveEngines(wheel_speeds, trueSpeed_FL, trueSpeed_FR, trueSpeed_BL, trueSpeed_BR, MAX_PWM, pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR)
 
@@ -654,6 +688,23 @@ def main():
             trueSpeed_BL = current_wheel_speeds.get('BL', 0.0)
             trueSpeed_BR = current_wheel_speeds.get('BR', 0.0)
 
+            sign_FL = np.sign(wheel_speeds[0, 0])
+            sign_FR = np.sign(wheel_speeds[1, 0])
+            sign_BL = np.sign(wheel_speeds[2, 0])
+            sign_BR = np.sign(wheel_speeds[3, 0])
+
+            new_signs = [sign_FL, sign_FR, sign_BL, sign_BR]
+            old_signs = [old_sign_FL, old_sign_FR, old_sign_BL, old_sign_BR]
+
+            if new_signs != old_signs:
+                msg.data = [sign_FL, sign_FR, sign_BL, sign_BR]
+                pub.publish(msg)
+
+            old_sign_FL = sign_FL
+            old_sign_FR = sign_FR
+            old_sign_BL = sign_BL
+            old_sign_BR = sign_BR
+
             # Update the PWM targets for the eninges:
             driveEngines(wheel_speeds, trueSpeed_FL, trueSpeed_FR, trueSpeed_BL, trueSpeed_BR, MAX_PWM, pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR)
 
@@ -688,6 +739,23 @@ def main():
             trueSpeed_BL = current_wheel_speeds.get('BL', 0.0)
             trueSpeed_BR = current_wheel_speeds.get('BR', 0.0)
 
+            sign_FL = np.sign(wheel_speeds[0, 0])
+            sign_FR = np.sign(wheel_speeds[1, 0])
+            sign_BL = np.sign(wheel_speeds[2, 0])
+            sign_BR = np.sign(wheel_speeds[3, 0])
+
+            new_signs = [sign_FL, sign_FR, sign_BL, sign_BR]
+            old_signs = [old_sign_FL, old_sign_FR, old_sign_BL, old_sign_BR]
+
+            if new_signs != old_signs:
+                msg.data = [sign_FL, sign_FR, sign_BL, sign_BR]
+                pub.publish(msg)
+
+            old_sign_FL = sign_FL
+            old_sign_FR = sign_FR
+            old_sign_BL = sign_BL
+            old_sign_BR = sign_BR
+
             # Update the engine targets:
             driveEngines(wheel_speeds, trueSpeed_FL, trueSpeed_FR, trueSpeed_BL, trueSpeed_BR, MAX_PWM, pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR)
 
@@ -721,6 +789,23 @@ def main():
                 trueSpeed_FR = current_wheel_speeds.get('FR', 0.0)
                 trueSpeed_BL = current_wheel_speeds.get('BL', 0.0)
                 trueSpeed_BR = current_wheel_speeds.get('BR', 0.0)
+
+                sign_FL = np.sign(wheel_speeds[0, 0])
+                sign_FR = np.sign(wheel_speeds[1, 0])
+                sign_BL = np.sign(wheel_speeds[2, 0])
+                sign_BR = np.sign(wheel_speeds[3, 0])
+
+                new_signs = [sign_FL, sign_FR, sign_BL, sign_BR]
+                old_signs = [old_sign_FL, old_sign_FR, old_sign_BL, old_sign_BR]
+
+                if new_signs != old_signs:
+                    msg.data = [sign_FL, sign_FR, sign_BL, sign_BR]
+                    pub.publish(msg)
+
+                old_sign_FL = sign_FL
+                old_sign_FR = sign_FR
+                old_sign_BL = sign_BL
+                old_sign_BR = sign_BR
 
                 # Update the engine PWM targets:
                 driveEngines(wheel_speeds, trueSpeed_FL, trueSpeed_FR, trueSpeed_BL, trueSpeed_BR, MAX_PWM, pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR)
@@ -776,6 +861,23 @@ def main():
             trueSpeed_FR = current_wheel_speeds.get('FR', 0.0)
             trueSpeed_BL = current_wheel_speeds.get('BL', 0.0)
             trueSpeed_BR = current_wheel_speeds.get('BR', 0.0)
+
+            sign_FL = np.sign(wheel_speeds[0, 0])
+            sign_FR = np.sign(wheel_speeds[1, 0])
+            sign_BL = np.sign(wheel_speeds[2, 0])
+            sign_BR = np.sign(wheel_speeds[3, 0])
+
+            new_signs = [sign_FL, sign_FR, sign_BL, sign_BR]
+            old_signs = [old_sign_FL, old_sign_FR, old_sign_BL, old_sign_BR]
+
+            if new_signs != old_signs:
+                msg.data = [sign_FL, sign_FR, sign_BL, sign_BR]
+                pub.publish(msg)
+
+            old_sign_FL = sign_FL
+            old_sign_FR = sign_FR
+            old_sign_BL = sign_BL
+            old_sign_BR = sign_BR
             
             # Update the engine targets:
             driveEngines(wheel_speeds, trueSpeed_FL, trueSpeed_FR, trueSpeed_BL, trueSpeed_BR, MAX_PWM, pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR)
