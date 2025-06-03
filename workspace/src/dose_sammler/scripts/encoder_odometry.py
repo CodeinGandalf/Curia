@@ -105,7 +105,7 @@ def main():
     tf_broadcaster = tf2_ros.TransformBroadcaster()
 
     # Subscribe to direction topic (example: Int32MultiArray)
-    rospy.Subscriber("/encoder_direction", Int32MultiArray, dir_callback)
+    rospy.Subscriber("/wheel_direction", Int8MultiArray, dir_callback)
 
     # Setup the encoders:
     setup_encoders()
