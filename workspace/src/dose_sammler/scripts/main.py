@@ -216,7 +216,7 @@ def set_servo_pwm(pi, Pin, pwm_value):
         pi.set_servo_pulsewidth(Pin, pwm_value)
         return
     pi.set_servo_pulsewidth(Pin, pwm_value)
-    return
+    
     # Calculate the amount of steps to smooth the movement:
     steps = int((pwm_value - pwm) / step_size)
 
