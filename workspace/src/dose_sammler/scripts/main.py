@@ -101,7 +101,6 @@ def mecanum_inv_kinematics(vx, vy, omega, wheelRadius=0.044, L=0.250, W=0.132):
         [1, -1, (L + W)]
     ])
     
-
     # Define the matrix with the velocitys:
     velocityVector = np.matrix([vx, vy, omega]).T
     wheelSpeeds = J_inv * velocityVector
@@ -352,7 +351,10 @@ def calculatePoseCan(map1, map2):
             world_x.append(min_origin_x + x_idx * resolution)
             world_y.append(min_origin_y + (final_height - y_idx) * resolution)
 
-    return list(zip(world_x, world_y, area))
+    if world_x and world_y and area:
+        return list(zip(world_x, world_y, area))
+    else:
+        return None
 
 
 # Function to convert the PID controller value to an PWM value:
@@ -549,6 +551,11 @@ def main(pca):
     GPIO.setup(PINLEUZE1, GPIO.IN)
     GPIO.setup(PINLEUZE2, GPIO.IN)
 
+    # Define the constants to drive the robot in the autonom mode:
+    SPEED_X_AUTONOM = -0.04
+    SPEED_Y_AUTONOM = -0.04
+    SPEED_ROT_Z_AUTONOM = -0.1
+
     # Set the bool to run the manual steering of the robot to true:
     run = True
 
@@ -654,17 +661,18 @@ def main(pca):
         rospy.loginfo("Searching for objects in the maps.\r")
 
         # Calculate the pose of the can:
-        pose = calculatePoseCan(map1, map2)
+        pose_of_cans = calculatePoseCan(map1, map2)
 
         # Define positionCan as an array:
         positionCan = []
 
-        # Print all contours in the mask:
-        for i, (x, y, a) in enumerate(pose):
-            rospy.loginfo(f'Pose can: {x:.2f}, {y:.2f}\r')
-            positionCan.append((x, y))
-            posCans = True
-            rospy.loginfo("Can detected.\r")
+        if pose_of_cans:
+            # Print all contours in the mask:
+            for i, (x, y, a) in enumerate(pose_of_cans):
+                rospy.loginfo(f'Pose can: {x:.2f}, {y:.2f}\r')
+                positionCan.append((x, y))
+                posCans = True
+                rospy.loginfo("Can detected.\r")
     else:
         rospy.loginfo("map1 and or map2 are / is empty\r")
 
@@ -683,6 +691,9 @@ def main(pca):
         # Calculate the yaw of the robot in euler angle:
         quat = [poseOrigin.pose.orientation.w, poseOrigin.pose.orientation.x, poseOrigin.pose.orientation.y, poseOrigin.pose.orientation.z]
         _, _, yaw = quat2euler(quat, axes='sxyz')
+
+        # Correct the orientation from the RoS coordinate system to the robot orientation:
+        yaw = yaw - np.pi
         
         rospy.loginfo(f'orientation robot: {yaw}\r')
 
@@ -691,14 +702,14 @@ def main(pca):
         diff_orient = (diff_orient + np.pi) % (2 * np.pi) - np.pi
 
         # Define an tolerance angle, if the robot cuts this tolerance, so the angle difference is below the tolerance, then the robot can correct the y and x offset to drive towards the can and collect it: 
-        angle_tolerance = np.deg2rad(30)
+        angle_tolerance = np.deg2rad(10)
 
         # Check if the can is within the tolerance:
         while abs(diff_orient) > angle_tolerance:
             # Set the rot target to 0.3 and check in what direction it should turn:
             dx = 0
             dy = 0
-            drot = 0.3*np.sign(diff_orient)
+            drot = SPEED_ROT_Z_AUTONOM*np.sign(diff_orient)
 
             # Update the wheel speeds:
             wheel_speeds = mecanum_inv_kinematics(dx, dy, drot)
@@ -716,6 +727,9 @@ def main(pca):
             _, _, yaw = quat2euler(quat, axes='sxyz')
             quat = [currentPose.pose.orientation.w, currentPose.pose.orientation.x, currentPose.pose.orientation.y, currentPose.pose.orientation.z]
 
+            # Correct the orientation from the RoS coordinate system to the robot orientation:
+            yaw = yaw - np.pi
+
             # Calculate the new angle difference from the new pose to the can:
             diff_orient = np.atan2(target_pose_y, target_pose_x) - yaw
             diff_orient = (diff_orient + np.pi) % (2 * np.pi) - np.pi
@@ -729,7 +743,7 @@ def main(pca):
         while abs(diff_pose_y) > 0.05:
             # Set the y target to drive sideways:
             dx = 0
-            dy = 0.04*np.sign(diff_pose_y)
+            dy = SPEED_Y_AUTONOM*np.sign(diff_pose_y)
             drot = 0
 
             # Update the wheel speeds:
@@ -756,8 +770,8 @@ def main(pca):
         # Drive towards the can and stop the robot as soon as it's located about 0.5m in front of the can:
         while abs(diff_pose_x) > 0.5:
             # Update the dx and dx target, dx will only trigger if the robot starts to drift:
-            dx = 0.04*np.sign(diff_pose_x)
-            dy = diff_pose_y*kp
+            dx = SPEED_X_AUTONOM*np.sign(diff_pose_x)
+            dy = -diff_pose_y*kp
             drot = 0
 
             # Calculate the new wheel speeds:
@@ -788,8 +802,8 @@ def main(pca):
         if isCan:
             # Check the Leuze sensors. When they see the can stop the engines:
             while Leuze1 is False and Leuze2 is False:
-                # Drive towards the can; no dx correction and no rotation needed here:
-                dx = 0.04*np.sign(diff_pose_x)
+                # Drive towards the can; no dy correction and no rotation needed here:
+                dx = SPEED_X_AUTONOM*np.sign(diff_pose_x)
                 dy = 0
                 drot = 0
 
@@ -827,19 +841,19 @@ def main(pca):
         _, _, yaw = quat2euler(quat, axes='sxyz')
         quat = [currentPose.pose.orientation.w, currentPose.pose.orientation.x, currentPose.pose.orientation.y, currentPose.pose.orientation.z]
 
+        # Correct the orientation from the RoS coordinate system to the robot orientation:
+        yaw = yaw - np.pi
+
         # Calculate the new angle difference from the new pose to the can:
         diff_orient = yaw + np.pi
         diff_orient = (diff_orient + np.pi) % (2 * np.pi) - np.pi
-
-        # Define an tolerance angle, if the robot cuts this tolerance, so the angle difference is below the tolerance, then the robot can correct the y and x offset to drive towards the can and collect it: 
-        angle_tolerance = np.deg2rad(30)
 
         # Check if the can is within the tolerance:
         while abs(diff_orient) > angle_tolerance:
             # Set the rot target to 0.3 and check in what direction it should turn:
             dx = 0
             dy = 0
-            drot = 0.3*np.sign(diff_orient)
+            drot = SPEED_ROT_Z_AUTONOM*np.sign(diff_orient)
 
             # Update the wheel speeds:
             wheel_speeds = mecanum_inv_kinematics(dx, dy, drot)
@@ -856,6 +870,9 @@ def main(pca):
             # Calculate the new angle from the new pose:
             _, _, yaw = quat2euler(quat, axes='sxyz')
             quat = [currentPose.pose.orientation.w, currentPose.pose.orientation.x, currentPose.pose.orientation.y, currentPose.pose.orientation.z]
+
+            # Correct the orientation from the RoS coordinate system to the robot orientation:
+            yaw = yaw - np.pi
 
             # Calculate the new angle difference from the new pose to the can:
             diff_orient = yaw + np.pi
@@ -877,7 +894,7 @@ def main(pca):
         while abs(pose_offset_y) > 0.05:
             # Calculate the new speed targets:
             dx = 0
-            dy = 0.04*np.sign(pose_offset_y)
+            dy = SPEED_Y_AUTONOM*np.sign(pose_offset_y)
             drot = 0
 
             # Update the wheel speeds:
@@ -900,21 +917,13 @@ def main(pca):
         
         # Stop all engines:
         stop_all_motors(pca)
-
-        # Calculate the new angle from the new pose:
-        _, _, yaw = quat2euler(quat, axes='sxyz')
-        quat = [pose.pose.orientation.w, pose.pose.orientation.x, pose.pose.orientation.y, pose.pose.orientation.z]
-
-        # Calculate the new angle difference from the new pose to the can:
-        diff_orient = yaw + np.pi
-        diff_orient = (diff_orient + np.pi) % (2 * np.pi) - np.pi
         
         # While this offset is to big update the PWM values to get closer to the home pose:
         while abs(pose_offset_x) > 0.05:
             # Calculate the new speed targets:
-            dx = 0.04*np.sign(pose_offset_x)
-            dy = pose_offset_y*kp
-            drot = diff_orient*kp
+            dx = SPEED_X_AUTONOM*np.sign(pose_offset_x)
+            dy = -pose_offset_y*kp
+            drot = 0
 
             # Update the wheel speeds:
             wheel_speeds = mecanum_inv_kinematics(dx, dy, drot)
@@ -931,14 +940,6 @@ def main(pca):
             # Calculate the new offset:
             pose_offset_x = poseOrigin.pose.position.x - pose.pose.position.x
             pose_offset_y = poseOrigin.pose.position.y - pose.pose.position.y
-
-            # Calculate the new angle from the new pose:
-            _, _, yaw = quat2euler(quat, axes='sxyz')
-            quat = [pose.pose.orientation.w, pose.pose.orientation.x, pose.pose.orientation.y, pose.pose.orientation.z]
-
-            # Calculate the new angle difference from the new pose to the can:
-            diff_orient = yaw + np.pi
-            diff_orient = (diff_orient + np.pi) % (2 * np.pi) - np.pi
 
             rate.sleep()
         
@@ -970,12 +971,14 @@ if __name__ == '__main__':
     pca = PCA9685(i2c)
     pca.frequency = 1000
 
+    # Try to execute the main loop:
     try:
         main(pca)
     except rospy.ROSInterruptException as e:
         rospy.logerr(f'ROS has exited with the exception: {e}\r')
     except Exception as e:
         rospy.logerr(f'Unexpected error: {e}\r')
+    # Shut down all engines and clean the GPIOs at the end:
     finally:
         stop_all_motors(pca)
         GPIO.cleanup()

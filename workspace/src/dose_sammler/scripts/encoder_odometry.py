@@ -14,8 +14,8 @@ from geometry_msgs.msg import Quaternion, Twist, TransformStamped
 from std_msgs.msg import Int8MultiArray
 from tf.transformations import quaternion_from_euler
 import tf2_ros
-
 from sensor_msgs.msg import JointState
+import threading
 
 # Define the pins for the encoder:
 ENCODER_PINS = {
@@ -26,58 +26,58 @@ ENCODER_PINS = {
 }
 
 # Tick counter:
-import threading
 ticks = {"FL": 0, "FR": 0, "RL": 0, "RR": 0}
 ticks_lock = threading.Lock()
 
-# Store direction for each wheel (default to 1)
+# Store direction for each wheel (default to 1):
 encoder_dir = {"FL": 1, "FR": 1, "RL": 1, "RR": 1}
 encoder_dir_lock = threading.Lock()
 
-# Callback for direction topic
+
+# Callback for direction topic:
 def dir_callback(msg):
-    # msg should be a dictionary-like message, e.g. {'FL': 1, 'FR': 1, 'RL': -1, 'RR': -1}
-    # For example, use std_msgs/Int32MultiArray or a custom message
+    # msg should be a dictionary-like message, e.g. {'FL': 1, 'FR': 1, 'RL': -1, 'RR': -1}:
     with encoder_dir_lock:
         encoder_dir['FL'] = msg.data[0]
         encoder_dir['FR'] = msg.data[1]
         encoder_dir['RL'] = msg.data[2]
         encoder_dir['RR'] = msg.data[3]
 
-# Unified encoder callback
+
+# Encoder callback:
 def encoder_callback(channel, wheel_name):
-    # Only increment/decrement on rising edge of encoder A
+    # Only increment/decrement on rising edge of encoder A:
     with encoder_dir_lock:
         dir = encoder_dir[wheel_name]
     with ticks_lock:
         ticks[wheel_name] += dir
 
-# -------------- UPDATED SETUP FUNCTION --------------
 
-
+# Setup the function to setup the encoders:
 def setup_encoders():
     GPIO.setmode(GPIO.BCM)
-    # Define wheel info: (A pin, direction)
+    # Define wheel info: (A pin, direction):
     wheel_info = {
         "FL": (ENCODER_PINS["FL_A"],  1),
         "FR": (ENCODER_PINS["FR_A"],  1),
         "RL": (ENCODER_PINS["RL_A"], -1),
         "RR": (ENCODER_PINS["RR_A"], -1),
     }
+
+    # Loop through the encoders:
     for wheel, (a_pin, dir) in wheel_info.items():
+        # Setup the encoder pins:
         GPIO.setup(a_pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-        # Use lambda to pass wheel_name and dir to the callback
-        GPIO.add_event_detect(
-            a_pin, GPIO.RISING,
-            callback=lambda channel, w=wheel: encoder_callback(channel, w)
-        )
+
+        # Setup the encoder callback for rising edge of the encoders:
+        GPIO.add_event_detect(a_pin, GPIO.RISING, callback=lambda channel, w=wheel: encoder_callback(channel, w))
 
 
 # Define the function to calculate the odometry:
 def calculate_odometry(ticks_delta, dt):
-    TICKS_PER_REV = 700 #2797
+    TICKS_PER_REV = 700
     WHEEL_RADIUS = 0.044
-    L = 0.244
+    L = 0.250
     W = 0.132
 
     w = {}
@@ -187,6 +187,7 @@ def main():
         odom_pub.publish(odom)
         last_time = now
         rate.sleep()
+
 
 # Call the main function if it's executed as the main file:
 if __name__ == "__main__":
