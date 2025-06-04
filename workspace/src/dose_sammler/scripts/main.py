@@ -95,10 +95,10 @@ def key_callback(msg):
 def mecanum_inv_kinematics(vx, vy, omega, wheelRadius=0.044, L=0.250, W=0.132):
     # Matrix for the inverse kinematics:
     J_inv = 1/wheelRadius*np.matrix([
-        [1, -1, -(L + W)],
-        [1, 1, (L + W)],
+        [1, -1, (L + W)],
         [1, 1, -(L + W)],
-        [1, -1, (L + W)]
+        [1, 1, (L + W)],
+        [1, -1, -(L + W)]
     ])
 
     # Define the matrix with the velocitys:
