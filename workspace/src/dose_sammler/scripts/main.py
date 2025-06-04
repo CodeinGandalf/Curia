@@ -897,6 +897,14 @@ def main(pca):
         
         # Stop all engines:
         stop_all_motors(pca)
+
+        # Calculate the new angle from the new pose:
+        _, _, yaw = quat2euler(quat, axes='sxyz')
+        quat = [pose.pose.orientation.w, pose.pose.orientation.x, pose.pose.orientation.y, pose.pose.orientation.z]
+
+        # Calculate the new angle difference from the new pose to the can:
+        diff_orient = yaw + np.pi
+        diff_orient = (diff_orient + np.pi) % (2 * np.pi) - np.pi
         
         # While this offset is to big update the PWM values to get closer to the home pose:
         while abs(pose_offset_x) > 0.05:
