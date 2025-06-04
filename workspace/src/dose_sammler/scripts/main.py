@@ -202,10 +202,10 @@ def on_shutdown(pca):
 # Define the function for the servo pwm:
 def set_servo_pwm(pi, Pin, pwm_value):
     # Work with step size of 5 to smooth the servo movement:
-    step_const = 5
+    step_const = 10
 
     # Check what servo movement should be generated:
-    """if pwm_value == GRIPPER_CLOSED:
+    if pwm_value == GRIPPER_CLOSED:
         pwm = GRIPPER_OPEN
         step_size = -step_const
     elif pwm_value == GRIPPER_OPEN:
@@ -214,7 +214,7 @@ def set_servo_pwm(pi, Pin, pwm_value):
     else:
         # If there is an other PWM value then write it onto the pin without smoothing it:
         pi.set_servo_pulsewidth(Pin, pwm_value)
-        return"""
+        return
     pi.set_servo_pulsewidth(Pin, pwm_value)
     return
     # Calculate the amount of steps to smooth the movement:
