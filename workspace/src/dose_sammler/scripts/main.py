@@ -404,8 +404,8 @@ def driveEngines(wheel_speeds, MAX_PWM, pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR
     # Calculate the PMM values:
     #pwm_fl = target_FL*max_pwm/max_speed
     pwm_fl = 0
-    pwm_fr = target_FR*max_pwm/max_speed
-    pwm_bl = 0
+    pwm_fr = 0
+    pwm_bl = target_BL*max_pwm/max_speed
     pwm_br = 0
     """pwm_bl = target_BL*max_pwm/max_speed
     pwm_fr = target_FR*max_pwm/max_speed
