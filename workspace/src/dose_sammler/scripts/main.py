@@ -178,10 +178,10 @@ def set_motor_pwm(pca, channel_forward, channel_backward, pwm_value, MAX_PWM):
 # Define the function to stop all engines:
 def stop_all_motors(pca):
     # This loop can be called if the node is dieing, so the loop isn't in the main loop anymore. For that reason the pins for the engines etc. are defined in this loop too:
-    MOTOR_FL = (0, 1)
-    MOTOR_FR = (2, 3)
-    MOTOR_BL = (4, 5)
-    MOTOR_BR = (6, 7)
+    MOTOR_BL = (0, 1)
+    MOTOR_FL = (2, 3)
+    MOTOR_BR = (4, 5)
+    MOTOR_FR = (6, 7)
     MAX_PWM = 65535*0.8
 
     # Inform the user that the engines are turned off:
@@ -402,14 +402,10 @@ def driveEngines(wheel_speeds, MAX_PWM, pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR
     pwm_br = pid_output_to_pwm(corr_BR)"""
 
     # Calculate the PMM values:
-    #pwm_fl = target_FL*max_pwm/max_speed
-    pwm_fl = 0
-    pwm_fr = 0
+    pwm_fl = target_FL*max_pwm/max_speed
     pwm_bl = target_BL*max_pwm/max_speed
-    pwm_br = 0
-    """pwm_bl = target_BL*max_pwm/max_speed
     pwm_fr = target_FR*max_pwm/max_speed
-    pwm_br = target_BR*max_pwm/max_speed"""
+    pwm_br = target_BR*max_pwm/max_speed
 
     # Print the true speed and target speed for all wheels:
     """rospy.loginfo(f'True Speed FL: {trueSpeed_FL:.3f}, Target: {wheel_speeds[0, 0]:.3f}\r')
