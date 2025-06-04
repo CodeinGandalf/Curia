@@ -26,6 +26,7 @@ from scipy.ndimage import label, center_of_mass
 from sensor_msgs.msg import JointState
 from std_msgs.msg import Int8MultiArray
 from simple_pid import PID
+from transforms3d.euler import quat2euler
 
 # Define the path to the folder of the subfiles:
 sys.path.append(os.path.join(os.path.dirname(__file__), '../src'))
@@ -168,6 +169,26 @@ def set_motor_pwm(pca, channel_forward, channel_backward, pwm_value, MAX_PWM):
         pca.channels[channel_backward].duty_cycle = 0
 
 
+def stop_all_motors(pca):
+    MOTOR_FL = (0, 1)
+    MOTOR_FR = (2, 3)
+    MOTOR_BL = (4, 5)
+    MOTOR_BR = (6, 7)
+    MAX_PWM = 65535*0.8
+
+    rospy.loginfo("Stopping all motors...")
+
+    set_motor_pwm(pca, MOTOR_FL[0], MOTOR_FL[1], 0, MAX_PWM)
+    set_motor_pwm(pca, MOTOR_FR[0], MOTOR_FR[1], 0, MAX_PWM)
+    set_motor_pwm(pca, MOTOR_BL[0], MOTOR_BL[1], 0, MAX_PWM)
+    set_motor_pwm(pca, MOTOR_BR[0], MOTOR_BR[1], 0, MAX_PWM)
+
+
+def on_shutdown(pca):
+    stop_all_motors(pca)
+    rospy.loginfo("Shutdown: Motors stopped.")
+
+
 # Define the function for the servo pwm:
 def set_servo_pwm(pi, Pin, pwm_value):
     # Work with 10 steps to smooth the servo movement:
@@ -220,7 +241,7 @@ def crop_map(map_array, margin):
 def calculatePoseCan(map1, map2):
     # Get the resolution and define the margin:
     resolution = map1.info.resolution
-    margin = 0.3
+    margin = 0.2
 
     # Calculate the amount of cells:
     crop_cells = int(margin / resolution)
@@ -253,42 +274,30 @@ def calculatePoseCan(map1, map2):
     diff_y = new_origin_y2 - new_origin_y1
 
     # Get the min value for the origins:
-    min_origin_x = min(new_origin_x1, new_origin_x2)
-    min_origin_y = min(new_origin_y1, new_origin_y2)
+    min_origin_x = max(new_origin_x1, new_origin_x2)
+    min_origin_y = max(new_origin_y1, new_origin_y2)
 
     # Check if there is an offset of the origins:
     if diff_x != 0 or diff_y != 0:
-        offset_x1 = abs(new_origin_x1 - min_origin_x)
-        offset_y1 = abs(new_origin_y1 - min_origin_y)
         offset_x2 = abs(new_origin_x2 - min_origin_x)
         offset_y2 = abs(new_origin_y2 - min_origin_y)
 
         # Calculate the amount of cells of the offset:
-        offset_cells_x1 = int(round(offset_x1 / resolution))
-        offset_cells_y1 = int(round(offset_y1 / resolution))
         offset_cells_x2 = int(round(offset_x2 / resolution))
         offset_cells_y2 = int(round(offset_y2 / resolution))
 
         # Crop the maps to bring the origins together:
-        map1_cropped = map1_cropped[:-offset_cells_y1, offset_cells_x1:]
-        map2_cropped = map2_cropped[:-offset_cells_y2, offset_cells_x2:]
-
-    # Calculate the new width and height of the maps:
-    width_map1 = map1_cropped.shape[1]
-    height_map1 = map1_cropped.shape[0]
-    width_map2 = map2_cropped.shape[1]
-    height_map2 = map2_cropped.shape[0]
-
-    # Check if both maps have the same width and height:
-    diff_width = abs(width_map2 - width_map1)
-    diff_height = abs(height_map2 - height_map1)
+        if offset_cells_y2 == 0:
+            map2_cropped = map2_cropped[:, offset_cells_x2:]
+        else:
+            map2_cropped = map2_cropped[:-offset_cells_y2, offset_cells_x2:]
 
     # Set the min width and height:
     final_width = min(map1_cropped.shape[1], map2_cropped.shape[1])
     final_height = min(map1_cropped.shape[0], map2_cropped.shape[0])
 
     # If the maps have a different shape, correct it:
-    if diff_width != 0 or diff_height != 0:
+    if map1_cropped.shape != map2_cropped.shape:
         # Crop the maps to get them to the same shape:
         map1_cropped = map1_cropped[-final_height:, :final_width]
         map2_cropped = map2_cropped[-final_height:, :final_width]
@@ -309,17 +318,21 @@ def calculatePoseCan(map1, map2):
     # Get the area and the CoG:
     for i in range(1, num_features + 1):
         region = (labeled_mask == i)
-        area.append(np.sum(region)*resolution**2*10000)
-        centroid = center_of_mass(region)
 
-        # Calculate the pose in the global coordinate system:
-        y_idx, x_idx = centroid
-        world_x.append(min_origin_x + (final_width - x_idx) * resolution)
-        world_y.append(min_origin_y + (final_height - y_idx) * resolution)
+        check = np.sum(region)*resolution**2*10000
 
-        rospy.loginfo(f"Targets {i}\r")
-        rospy.loginfo(f"Area: {area[i - 1]}\r")
-        rospy.loginfo(f"CoG: x = {world_x[i - 1]:.2f}, y = {world_y[i - 1]:.2f}\r")
+        if check >= 36 and check <= 64:
+            area.append(check)
+            centroid = center_of_mass(region)
+
+            # Calculate the pose in the global coordinate system:
+            y_idx, x_idx = centroid
+            world_x.append(min_origin_x + x_idx * resolution)
+            world_y.append(min_origin_y + (final_height - y_idx) * resolution)
+
+            rospy.loginfo(f"Targets {i}\r")
+            rospy.loginfo(f"Area: {area[i - 1]}\r")
+            rospy.loginfo(f"CoG: x = {world_x[i - 1]:.2f}, y = {world_y[i - 1]:.2f}\r")
     return list(zip(world_x, world_y, area))
 
 
@@ -407,11 +420,23 @@ def driveEngines(wheel_speeds, trueSpeedFL, trueSpeedFR, trueSpeedBL, trueSpeedB
         set_motor_pwm(pca, MOTOR_BR[0], MOTOR_BR[1], pwm_br, MAX_PWM)
 
 
+def update_motor_signs(wheel_speeds, old_signs, pub, msg):
+    new_signs = [int(np.sign(wheel_speeds[i, 0])) for i in range(4)]
+    if new_signs != old_signs:
+        msg.data = new_signs
+        pub.publish(msg)
+    return new_signs
+
+
 # Define the main function:
-def main():
+def main(pca):
     # Init the node and subscriber:
     rospy.init_node('dose_sammler')
-    # Subscriber starten
+
+    # Shut down all engines if the node is shut down:
+    rospy.on_shutdown(on_shutdown)
+
+    # Start the subscribers:
     rospy.Subscriber("/wheel_speeds", JointState, wheel_speed_callback)
     rospy.Subscriber('/keyboard_input', String, key_callback)
     rospy.Subscriber("/map", OccupancyGrid, map_callback)
@@ -494,13 +519,6 @@ def main():
     pi = pigpio.pi()
     if not pi.connected:
         exit()
-
-    # Initalise the I2C:
-    i2c = busio.I2C(SCL, SDA)
-
-    # Initalise the PWM board to control the engines, 1000 Hz is the max PWM value for that board:
-    pca = PCA9685(i2c)
-    pca.frequency = 1000
 
     # Set the frequency and PWM values for the servos:
     pi.set_PWM_frequency(PWM_PIN_GRIPPER, 50)
@@ -596,8 +614,9 @@ def main():
         trueSpeed_BL = current_wheel_speeds.get('BL', 0.0)
         trueSpeed_BR = current_wheel_speeds.get('BR', 0.0)
 
+        old_signs = update_motor_signs(wheel_speeds, old_signs, pub, msg)
 
-        sign_FL = int(np.sign(wheel_speeds[0, 0]))
+        """sign_FL = int(np.sign(wheel_speeds[0, 0]))
         sign_FR = int(np.sign(wheel_speeds[1, 0]))
         sign_BL = int(np.sign(wheel_speeds[2, 0]))
         sign_BR = int(np.sign(wheel_speeds[3, 0]))
@@ -612,7 +631,7 @@ def main():
         old_sign_FL = sign_FL
         old_sign_FR = sign_FR
         old_sign_BL = sign_BL
-        old_sign_BR = sign_BR
+        old_sign_BR = sign_BR"""
 
         # Update the engine targets:
         driveEngines(wheel_speeds, trueSpeed_FL, trueSpeed_FR, trueSpeed_BL, trueSpeed_BR, MAX_PWM, pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR)
@@ -627,6 +646,7 @@ def main():
 
     # Check if there are 2 arrays with some map data in it:
     if map1 is not None and map2 is not None:
+        rospy.loginfo("Searching for objects in the maps.")
         # Calculate the pose of the can:
         pose = calculatePoseCan(map1, map2)
 
@@ -641,6 +661,7 @@ def main():
                 rospy.loginfo(f'Pose can: {x:.2f}, {y:.2f}\r')
                 positionCan.append((x, y))
                 posCans = True
+                rospy.loginfo("Can detected.")
     else:
         rospy.loginfo("map1 and or map2 are / is empty\r")
     
@@ -663,11 +684,58 @@ def main():
         diff_pose_x = target_pose_x - poseOrigin.pose.x
         diff_pose_y = target_pose_y - poseOrigin.pose.y
 
+        quat = [poseOrigin.pose.orientation.w, poseOrigin.pose.orientation.x, poseOrigin.pose.orientation.y, poseOrigin.pose.orientation.z]
+        _, _, yaw = quat2euler(quat, axes='sxyz')
+        
+        rospy.loginfo(f'orientation robot: {yaw}\r')
+
+        diff_orient = np.atan2(target_pose_y, target_pose_x) - yaw
+        diff_orient = (diff_orient + np.pi) % (2 * np.pi) - np.pi
+
+        angle_tolerance = np.deg2rad(30)
+
+        while abs(diff_orient) > angle_tolerance:
+            # Calculate the value of dy to drive sideways:
+            dx = 0
+            dy = 0
+            drot = 0.3*np.sign(diff_orient)
+
+            # Update the wheel speeds:
+            wheel_speeds = mecanum_inv_kinematics(dx, dy, drot)
+
+            # Current motor speeds in rad/s:
+            trueSpeed_FL = current_wheel_speeds.get('FL', 0.0)
+            trueSpeed_FR = current_wheel_speeds.get('FR', 0.0)
+            trueSpeed_BL = current_wheel_speeds.get('BL', 0.0)
+            trueSpeed_BR = current_wheel_speeds.get('BR', 0.0)
+
+            old_signs = update_motor_signs(wheel_speeds, old_signs, pub, msg)
+
+            # Update the PWM targets for the eninges:
+            driveEngines(wheel_speeds, trueSpeed_FL, trueSpeed_FR, trueSpeed_BL, trueSpeed_BR, MAX_PWM, pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR)
+
+            # Get the current pose:
+            currentPose = get_pose()
+
+            _, _, yaw = quat2euler(quat, axes='sxyz')
+            quat = [currentPose.pose.orientation.w, currentPose.pose.orientation.x, currentPose.pose.orientation.y, currentPose.pose.orientation.z]
+
+            diff_orient = np.atan2(target_pose_y, target_pose_x) - yaw
+            diff_orient = (diff_orient + np.pi) % (2 * np.pi) - np.pi
+
+            rate.sleep()
+        
+        # Set the engine targets to 0:
+        set_motor_pwm(pca, MOTOR_FL[0], MOTOR_FL[1], 0, MAX_PWM)
+        set_motor_pwm(pca, MOTOR_FR[0], MOTOR_FR[1], 0, MAX_PWM)
+        set_motor_pwm(pca, MOTOR_BL[0], MOTOR_BL[1], 0, MAX_PWM)
+        set_motor_pwm(pca, MOTOR_BR[0], MOTOR_BR[1], 0, MAX_PWM)
+
         # Correct the y offset:
         while diff_pose_y > 0.05:
             # Calculate the value of dy to drive sideways:
             dx = 0
-            dy = diff_pose_y*kp
+            dy = 0.04*np.sign(diff_pose_y)
             drot = 0
 
             # Update the wheel speeds:
@@ -679,22 +747,7 @@ def main():
             trueSpeed_BL = current_wheel_speeds.get('BL', 0.0)
             trueSpeed_BR = current_wheel_speeds.get('BR', 0.0)
 
-            sign_FL = int(np.sign(wheel_speeds[0, 0]))
-            sign_FR = int(np.sign(wheel_speeds[1, 0]))
-            sign_BL = int(np.sign(wheel_speeds[2, 0]))
-            sign_BR = int(np.sign(wheel_speeds[3, 0]))
-
-            new_signs = [sign_FL, sign_FR, sign_BL, sign_BR]
-            old_signs = [old_sign_FL, old_sign_FR, old_sign_BL, old_sign_BR]
-
-            if new_signs != old_signs:
-                msg.data = [sign_FL, sign_FR, sign_BL, sign_BR]
-                pub.publish(msg)
-
-            old_sign_FL = sign_FL
-            old_sign_FR = sign_FR
-            old_sign_BL = sign_BL
-            old_sign_BR = sign_BR
+            old_signs = update_motor_signs(wheel_speeds, old_signs, pub, msg)
 
             # Update the PWM targets for the eninges:
             driveEngines(wheel_speeds, trueSpeed_FL, trueSpeed_FR, trueSpeed_BL, trueSpeed_BR, MAX_PWM, pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR)
@@ -715,10 +768,10 @@ def main():
         set_motor_pwm(pca, MOTOR_BR[0], MOTOR_BR[1], 0, MAX_PWM)
 
         # Drive towards the can:
-        while diff_pose_x > 0.5:
+        while abs(diff_pose_x) > 0.5:
             # Update the dx and dx target:
-            dx = diff_pose_x*kp
-            dy = 0
+            dx = 0.04*np.sign(diff_pose_x)
+            dy = diff_pose_y*kp
             drot = 0
 
             # Calculate the new wheel speeds:
@@ -730,22 +783,7 @@ def main():
             trueSpeed_BL = current_wheel_speeds.get('BL', 0.0)
             trueSpeed_BR = current_wheel_speeds.get('BR', 0.0)
 
-            sign_FL = int(np.sign(wheel_speeds[0, 0]))
-            sign_FR = int(np.sign(wheel_speeds[1, 0]))
-            sign_BL = int(np.sign(wheel_speeds[2, 0]))
-            sign_BR = int(np.sign(wheel_speeds[3, 0]))
-
-            new_signs = [sign_FL, sign_FR, sign_BL, sign_BR]
-            old_signs = [old_sign_FL, old_sign_FR, old_sign_BL, old_sign_BR]
-
-            if new_signs != old_signs:
-                msg.data = [sign_FL, sign_FR, sign_BL, sign_BR]
-                pub.publish(msg)
-
-            old_sign_FL = sign_FL
-            old_sign_FR = sign_FR
-            old_sign_BL = sign_BL
-            old_sign_BR = sign_BR
+            old_signs = update_motor_signs(wheel_speeds, old_signs, pub, msg)
 
             # Update the engine targets:
             driveEngines(wheel_speeds, trueSpeed_FL, trueSpeed_FR, trueSpeed_BL, trueSpeed_BR, MAX_PWM, pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR)
@@ -758,9 +796,14 @@ def main():
             diff_pose_y = target_pose_y - currentPose.pose.y
 
             rate.sleep()
+        
+        # Set the engine targets to 0:
+        set_motor_pwm(pca, MOTOR_FL[0], MOTOR_FL[1], 0, MAX_PWM)
+        set_motor_pwm(pca, MOTOR_FR[0], MOTOR_FR[1], 0, MAX_PWM)
+        set_motor_pwm(pca, MOTOR_BL[0], MOTOR_BL[1], 0, MAX_PWM)
+        set_motor_pwm(pca, MOTOR_BR[0], MOTOR_BR[1], 0, MAX_PWM)
 
-        # Check if there is a can based upon the LIDAR and cam data:
-        # Use the LIDAR data and search for the can in the picture:
+        # Check if there is a can based upon the cam data:
         isCan = scc.find_best_can(camera_index)
 
         # If there is a can; collect it:
@@ -781,22 +824,7 @@ def main():
                 trueSpeed_BL = current_wheel_speeds.get('BL', 0.0)
                 trueSpeed_BR = current_wheel_speeds.get('BR', 0.0)
 
-                sign_FL = int(np.sign(wheel_speeds[0, 0]))
-                sign_FR = int(np.sign(wheel_speeds[1, 0]))
-                sign_BL = int(np.sign(wheel_speeds[2, 0]))
-                sign_BR = int(np.sign(wheel_speeds[3, 0]))
-
-                new_signs = [sign_FL, sign_FR, sign_BL, sign_BR]
-                old_signs = [old_sign_FL, old_sign_FR, old_sign_BL, old_sign_BR]
-
-                if new_signs != old_signs:
-                    msg.data = [sign_FL, sign_FR, sign_BL, sign_BR]
-                    pub.publish(msg)
-
-                old_sign_FL = sign_FL
-                old_sign_FR = sign_FR
-                old_sign_BL = sign_BL
-                old_sign_BR = sign_BR
+                old_signs = update_motor_signs(wheel_speeds, old_signs, pub, msg)
 
                 # Update the engine PWM targets:
                 driveEngines(wheel_speeds, trueSpeed_FL, trueSpeed_FR, trueSpeed_BL, trueSpeed_BR, MAX_PWM, pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR)
@@ -831,7 +859,7 @@ def main():
         pose_offset_y = poseOrigin.pose.position.y - pose.pose.position.y
 
         # While this offset is to big update the PWM values to get closer to the home pose:
-        while abs(pose_offset_x) > 0.05 and abs(pose_offset_y) > 0.05:
+        while abs(pose_offset_x) > 0.05:
             # Get the new pose:
             pose = get_pose()
 
@@ -853,22 +881,7 @@ def main():
             trueSpeed_BL = current_wheel_speeds.get('BL', 0.0)
             trueSpeed_BR = current_wheel_speeds.get('BR', 0.0)
 
-            sign_FL = int(np.sign(wheel_speeds[0, 0]))
-            sign_FR = int(np.sign(wheel_speeds[1, 0]))
-            sign_BL = int(np.sign(wheel_speeds[2, 0]))
-            sign_BR = int(np.sign(wheel_speeds[3, 0]))
-
-            new_signs = [sign_FL, sign_FR, sign_BL, sign_BR]
-            old_signs = [old_sign_FL, old_sign_FR, old_sign_BL, old_sign_BR]
-
-            if new_signs != old_signs:
-                msg.data = [sign_FL, sign_FR, sign_BL, sign_BR]
-                pub.publish(msg)
-
-            old_sign_FL = sign_FL
-            old_sign_FR = sign_FR
-            old_sign_BL = sign_BL
-            old_sign_BR = sign_BR
+            old_signs = update_motor_signs(wheel_speeds, old_signs, pub, msg)
             
             # Update the engine targets:
             driveEngines(wheel_speeds, trueSpeed_FL, trueSpeed_FR, trueSpeed_BL, trueSpeed_BR, MAX_PWM, pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR)
@@ -893,8 +906,21 @@ def main():
     sys.exit(0)
 
 if __name__ == '__main__':
+    # Initalise the I2C:
+    i2c = busio.I2C(SCL, SDA)
+
+    # Initalise the PWM board to control the engines, 1000 Hz is the max PWM value for that board:
+    pca = PCA9685(i2c)
+    pca.frequency = 1000
+
     try:
-        # Call the main loop:
-        main()
+        main(pca)
     except rospy.ROSInterruptException as e:
         rospy.logerr(f'ROS has exited with the exception: {e}')
+    except Exception as e:
+        rospy.logerr(f'Unexpected error: {e}')
+    finally:
+        stop_all_motors(pca)
+        GPIO.cleanup()
+        rospy.loginfo("Final cleanup done. Exiting.")
+        sys.exit(0)
