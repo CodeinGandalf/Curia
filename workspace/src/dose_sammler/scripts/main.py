@@ -54,9 +54,9 @@ def key_callback(msg):
     elif key == 's':
         dx -= 0.02
     elif key == 'a':
-        dy -= 0.02
-    elif key == 'd':
         dy += 0.02
+    elif key == 'd':
+        dy -= 0.02
     elif key == 'e':
         drot += 0.15
     elif key == 'q':
@@ -450,7 +450,7 @@ def driveEngines(wheel_speeds, MAX_PWM, pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR
 # Setup the function to update the sign of the direction for the speeds of the engines:
 def update_motor_signs(wheel_speeds, old_signs, pub, msg):
     # Get the new signs:
-    new_signs = [int(np.sign(wheel_speeds[i, 0])) for i in range(4)]
+    new_signs = [-int(np.sign(wheel_speeds[i, 0])) for i in range(4)]
     
     # If one of the signs has changed, then update the msg:
     if new_signs != old_signs:
