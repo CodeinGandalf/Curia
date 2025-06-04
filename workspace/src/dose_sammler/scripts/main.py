@@ -59,9 +59,9 @@ def key_callback(msg):
     elif key == 'r':
         dElevator = 1318
     elif key == 't':
-        dGripper = 1600
+        dGripper = GRIPPER_OPEN
     elif key == 'g':
-        dGripper = 950
+        dGripper = GRIPPER_CLOSED
     elif key == 'p':
         dx = 0
         dy = 0
@@ -168,11 +168,11 @@ def set_servo_pwm(pi, Pin, pwm_value):
     step_const = 5
 
     # Check what servo movement should be generated (four possible states cause there are 2 servos with 2 possible states):
-    if pwm_value == 950:
-        pwm = 1600
+    if pwm_value == GRIPPER_CLOSED:
+        pwm = GRIPPER_OPEN
         step_size = -step_const
-    elif pwm_value == 1600:
-        pwm = 950
+    elif pwm_value == GRIPPER_OPEN:
+        pwm = GRIPPER_CLOSED
         step_size = step_const
     else:
         # If there is an other PWM value then known write it onto the pin without smoothing it:
@@ -430,6 +430,7 @@ def main():
     MAX_PWM = 65535*0.8
     
     # Define the PWM values for the servos:
+    global GRIPPER_OPEN, GRIPPER_CLOSED, ELEVATOR_BOTTOM, ELEVATOR_TOP
     GRIPPER_OPEN = 1600
     GRIPPER_CLOSED = 950
     ELEVATOR_BOTTOM = 2400
