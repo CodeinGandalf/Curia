@@ -402,10 +402,10 @@ def driveEngines(wheel_speeds, MAX_PWM, pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR
     pwm_br = pid_output_to_pwm(corr_BR)"""
 
     # Calculate the PMM values:
-    pwm_fl = target_FL*max_pwm/max_speed
+    pwm_fl = 0
     pwm_bl = target_BL*max_pwm/max_speed
     pwm_fr = target_FR*max_pwm/max_speed
-    pwm_br = target_BR*max_pwm/max_speed
+    pwm_br = 0
 
     # Print the true speed and target speed for all wheels:
     """rospy.loginfo(f'True Speed FL: {trueSpeed_FL:.3f}, Target: {wheel_speeds[0, 0]:.3f}\r')
