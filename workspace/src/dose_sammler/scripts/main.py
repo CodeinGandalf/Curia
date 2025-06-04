@@ -347,12 +347,18 @@ def pid_output_to_pwm(corr, v_max=3.0, pwm_max=65535*0.8):
 
 
 # Function to update the PWM for the engines:
-def driveEngines(wheel_speeds, trueSpeedFL, trueSpeedFR, trueSpeedBL, trueSpeedBR, MAX_PWM, pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR):
+def driveEngines(wheel_speeds, MAX_PWM, pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR):
     # Add the target variables:
     target_FL = wheel_speeds[0, 0]
     target_FR = wheel_speeds[1, 0]
     target_BL = wheel_speeds[2, 0]
     target_BR = wheel_speeds[3, 0]
+
+    # Current motor speeds in rad/s:
+    trueSpeed_FL = current_wheel_speeds.get('FL', 0.0)
+    trueSpeed_FR = current_wheel_speeds.get('FR', 0.0)
+    trueSpeed_BL = current_wheel_speeds.get('BL', 0.0)
+    trueSpeed_BR = current_wheel_speeds.get('BR', 0.0)
 
     max_speed = 3
     max_pwm=65535*0.8
@@ -364,10 +370,10 @@ def driveEngines(wheel_speeds, trueSpeedFL, trueSpeedFR, trueSpeedBL, trueSpeedB
     pid_BR = PID(0.5, 0.1, 0.02, setpoint=target_BR)
 
     # Calculate the correction for the engine:
-    corr_FL = pid_FL(trueSpeedFL)
-    corr_FR = pid_FR(trueSpeedFR)
-    corr_BL = pid_BL(trueSpeedBL)
-    corr_BR = pid_BR(trueSpeedBR)
+    corr_FL = pid_FL(trueSpeed_FL)
+    corr_FR = pid_FR(trueSpeed_FR)
+    corr_BL = pid_BL(trueSpeed_BL)
+    corr_BR = pid_BR(trueSpeed_BR)
 
     # Calculte the correct PWM values from the PID controller:
     pwm_fr = pid_output_to_pwm(corr_FR)
@@ -381,10 +387,10 @@ def driveEngines(wheel_speeds, trueSpeedFL, trueSpeedFR, trueSpeedBL, trueSpeedB
     pwm_br = target_BR*max_pwm/max_speed
 
     # Print the true speed and target speed for all wheels:
-    # rospy.loginfo(f'True Speed FL: {trueSpeedFL:.3f}, Target: {wheel_speeds[0, 0]:.3f}\r')
-    # rospy.loginfo(f'True Speed FR: {trueSpeedFR:.3f}, Target: {wheel_speeds[1, 0]:.3f}\r')
-    # rospy.loginfo(f'True Speed BL: {trueSpeedBL:.3f}, Target: {wheel_speeds[2, 0]:.3f}\r')
-    # rospy.loginfo(f'True Speed BR: {trueSpeedBR:.3f}, Target: {wheel_speeds[3, 0]:.3f}\r')
+    rospy.loginfo(f'True Speed FL: {trueSpeed_FL:.3f}, Target: {wheel_speeds[0, 0]:.3f}\r')
+    rospy.loginfo(f'True Speed FR: {trueSpeed_FR:.3f}, Target: {wheel_speeds[1, 0]:.3f}\r')
+    rospy.loginfo(f'True Speed BL: {trueSpeed_BL:.3f}, Target: {wheel_speeds[2, 0]:.3f}\r')
+    rospy.loginfo(f'True Speed BR: {trueSpeed_BR:.3f}, Target: {wheel_speeds[3, 0]:.3f}\r')
 
     # Check if one of the engines has reached the max PWM value:
     if pwm_fl > MAX_PWM or pwm_fr > MAX_PWM or pwm_bl > MAX_PWM or pwm_br > MAX_PWM:
@@ -608,41 +614,15 @@ def main(pca):
             pwm_elevator = dElevator
             set_servo_pwm(pi, PWM_PIN_ELEVATOR, pwm_elevator)
 
-        # Current motor speeds calculated with the encoder data in rad/s:
-        trueSpeed_FL = current_wheel_speeds.get('FL', 0.0)
-        trueSpeed_FR = current_wheel_speeds.get('FR', 0.0)
-        trueSpeed_BL = current_wheel_speeds.get('BL', 0.0)
-        trueSpeed_BR = current_wheel_speeds.get('BR', 0.0)
-
         old_signs = update_motor_signs(wheel_speeds, old_signs, pub, msg)
 
-        """sign_FL = int(np.sign(wheel_speeds[0, 0]))
-        sign_FR = int(np.sign(wheel_speeds[1, 0]))
-        sign_BL = int(np.sign(wheel_speeds[2, 0]))
-        sign_BR = int(np.sign(wheel_speeds[3, 0]))
-
-        new_signs = [sign_FL, sign_FR, sign_BL, sign_BR]
-        old_signs = [old_sign_FL, old_sign_FR, old_sign_BL, old_sign_BR]
-
-        if new_signs != old_signs:
-            msg.data = [sign_FL, sign_FR, sign_BL, sign_BR]
-            pub.publish(msg)
-
-        old_sign_FL = sign_FL
-        old_sign_FR = sign_FR
-        old_sign_BL = sign_BL
-        old_sign_BR = sign_BR"""
-
         # Update the engine targets:
-        driveEngines(wheel_speeds, trueSpeed_FL, trueSpeed_FR, trueSpeed_BL, trueSpeed_BR, MAX_PWM, pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR)
+        driveEngines(wheel_speeds, MAX_PWM, pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR)
 
         rate.sleep()
 
     # Set the engine PWM targets to 0:
-    set_motor_pwm(pca, MOTOR_FL[0], MOTOR_FL[1], 0, MAX_PWM)
-    set_motor_pwm(pca, MOTOR_FR[0], MOTOR_FR[1], 0, MAX_PWM)
-    set_motor_pwm(pca, MOTOR_BL[0], MOTOR_BL[1], 0, MAX_PWM)
-    set_motor_pwm(pca, MOTOR_BR[0], MOTOR_BR[1], 0, MAX_PWM)
+    stop_all_motors(pca)
 
     # Check if there are 2 arrays with some map data in it:
     if map1 is not None and map2 is not None:
@@ -703,16 +683,10 @@ def main(pca):
             # Update the wheel speeds:
             wheel_speeds = mecanum_inv_kinematics(dx, dy, drot)
 
-            # Current motor speeds in rad/s:
-            trueSpeed_FL = current_wheel_speeds.get('FL', 0.0)
-            trueSpeed_FR = current_wheel_speeds.get('FR', 0.0)
-            trueSpeed_BL = current_wheel_speeds.get('BL', 0.0)
-            trueSpeed_BR = current_wheel_speeds.get('BR', 0.0)
-
             old_signs = update_motor_signs(wheel_speeds, old_signs, pub, msg)
 
             # Update the PWM targets for the eninges:
-            driveEngines(wheel_speeds, trueSpeed_FL, trueSpeed_FR, trueSpeed_BL, trueSpeed_BR, MAX_PWM, pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR)
+            driveEngines(wheel_speeds, MAX_PWM, pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR)
 
             # Get the current pose:
             currentPose = get_pose()
@@ -726,10 +700,7 @@ def main(pca):
             rate.sleep()
         
         # Set the engine targets to 0:
-        set_motor_pwm(pca, MOTOR_FL[0], MOTOR_FL[1], 0, MAX_PWM)
-        set_motor_pwm(pca, MOTOR_FR[0], MOTOR_FR[1], 0, MAX_PWM)
-        set_motor_pwm(pca, MOTOR_BL[0], MOTOR_BL[1], 0, MAX_PWM)
-        set_motor_pwm(pca, MOTOR_BR[0], MOTOR_BR[1], 0, MAX_PWM)
+        stop_all_motors(pca)
 
         # Correct the y offset:
         while diff_pose_y > 0.05:
@@ -741,16 +712,10 @@ def main(pca):
             # Update the wheel speeds:
             wheel_speeds = mecanum_inv_kinematics(dx, dy, drot)
 
-            # Current motor speeds in rad/s:
-            trueSpeed_FL = current_wheel_speeds.get('FL', 0.0)
-            trueSpeed_FR = current_wheel_speeds.get('FR', 0.0)
-            trueSpeed_BL = current_wheel_speeds.get('BL', 0.0)
-            trueSpeed_BR = current_wheel_speeds.get('BR', 0.0)
-
             old_signs = update_motor_signs(wheel_speeds, old_signs, pub, msg)
 
             # Update the PWM targets for the eninges:
-            driveEngines(wheel_speeds, trueSpeed_FL, trueSpeed_FR, trueSpeed_BL, trueSpeed_BR, MAX_PWM, pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR)
+            driveEngines(wheel_speeds, MAX_PWM, pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR)
 
             # Get the current pose:
             currentPose = get_pose()
@@ -762,10 +727,7 @@ def main(pca):
             rate.sleep()
         
         # Set the engine targets to 0:
-        set_motor_pwm(pca, MOTOR_FL[0], MOTOR_FL[1], 0, MAX_PWM)
-        set_motor_pwm(pca, MOTOR_FR[0], MOTOR_FR[1], 0, MAX_PWM)
-        set_motor_pwm(pca, MOTOR_BL[0], MOTOR_BL[1], 0, MAX_PWM)
-        set_motor_pwm(pca, MOTOR_BR[0], MOTOR_BR[1], 0, MAX_PWM)
+        stop_all_motors(pca)
 
         # Drive towards the can:
         while abs(diff_pose_x) > 0.5:
@@ -777,16 +739,10 @@ def main(pca):
             # Calculate the new wheel speeds:
             wheel_speeds = mecanum_inv_kinematics(dx, dy, drot)
 
-            # Current motor speeds in rad/s:
-            trueSpeed_FL = current_wheel_speeds.get('FL', 0.0)
-            trueSpeed_FR = current_wheel_speeds.get('FR', 0.0)
-            trueSpeed_BL = current_wheel_speeds.get('BL', 0.0)
-            trueSpeed_BR = current_wheel_speeds.get('BR', 0.0)
-
             old_signs = update_motor_signs(wheel_speeds, old_signs, pub, msg)
 
             # Update the engine targets:
-            driveEngines(wheel_speeds, trueSpeed_FL, trueSpeed_FR, trueSpeed_BL, trueSpeed_BR, MAX_PWM, pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR)
+            driveEngines(wheel_speeds, MAX_PWM, pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR)
 
             # Get the current pose:
             currentPose = get_pose()
@@ -798,10 +754,7 @@ def main(pca):
             rate.sleep()
         
         # Set the engine targets to 0:
-        set_motor_pwm(pca, MOTOR_FL[0], MOTOR_FL[1], 0, MAX_PWM)
-        set_motor_pwm(pca, MOTOR_FR[0], MOTOR_FR[1], 0, MAX_PWM)
-        set_motor_pwm(pca, MOTOR_BL[0], MOTOR_BL[1], 0, MAX_PWM)
-        set_motor_pwm(pca, MOTOR_BR[0], MOTOR_BR[1], 0, MAX_PWM)
+        stop_all_motors(pca)
 
         # Check if there is a can based upon the cam data:
         isCan = scc.find_best_can(camera_index)
@@ -818,16 +771,10 @@ def main(pca):
                 # Update the wheel speeds:
                 wheel_speeds = mecanum_inv_kinematics(dx, dy, drot)
 
-                # Current motor speeds in rad/s:
-                trueSpeed_FL = current_wheel_speeds.get('FL', 0.0)
-                trueSpeed_FR = current_wheel_speeds.get('FR', 0.0)
-                trueSpeed_BL = current_wheel_speeds.get('BL', 0.0)
-                trueSpeed_BR = current_wheel_speeds.get('BR', 0.0)
-
                 old_signs = update_motor_signs(wheel_speeds, old_signs, pub, msg)
 
                 # Update the engine PWM targets:
-                driveEngines(wheel_speeds, trueSpeed_FL, trueSpeed_FR, trueSpeed_BL, trueSpeed_BR, MAX_PWM, pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR)
+                driveEngines(wheel_speeds, MAX_PWM, pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR)
 
                 # Read from the Leuze sensors if they can see the can:
                 Leuze1 = GPIO.input(PINLEUZE1)
@@ -836,10 +783,7 @@ def main(pca):
                 rate.sleep()
 
             # Update the PMW value for the engines and the servos:
-            set_motor_pwm(pca, MOTOR_FL[0], MOTOR_FL[1], 0, MAX_PWM)
-            set_motor_pwm(pca, MOTOR_FR[0], MOTOR_FR[1], 0, MAX_PWM)
-            set_motor_pwm(pca, MOTOR_BL[0], MOTOR_BL[1], 0, MAX_PWM)
-            set_motor_pwm(pca, MOTOR_BR[0], MOTOR_BR[1], 0, MAX_PWM)
+            stop_all_motors(pca)
 
             # Set the PWM values for the servos to grab the can:
             pwm_gripper = GRIPPER_CLOSED
@@ -875,18 +819,15 @@ def main(pca):
             # Update the wheel speeds:
             wheel_speeds = mecanum_inv_kinematics(dx, dy, drot)
 
-            # Current motor speeds in rad/s:
-            trueSpeed_FL = current_wheel_speeds.get('FL', 0.0)
-            trueSpeed_FR = current_wheel_speeds.get('FR', 0.0)
-            trueSpeed_BL = current_wheel_speeds.get('BL', 0.0)
-            trueSpeed_BR = current_wheel_speeds.get('BR', 0.0)
-
             old_signs = update_motor_signs(wheel_speeds, old_signs, pub, msg)
             
             # Update the engine targets:
-            driveEngines(wheel_speeds, trueSpeed_FL, trueSpeed_FR, trueSpeed_BL, trueSpeed_BR, MAX_PWM, pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR)
+            driveEngines(wheel_speeds, MAX_PWM, pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR)
 
             rate.sleep()
+        
+        # Stop all engines:
+        stop_all_motors(pca)
         
         # Set the elevator PWM value to the bottom state:
         pwm_elevator = ELEVATOR_BOTTOM
