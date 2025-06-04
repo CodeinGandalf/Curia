@@ -431,7 +431,7 @@ def main():
     
     # Define the PWM values for the servos:
     GRIPPER_OPEN = 1600
-    GRIPPER_CLOSED = 950
+    GRIPPER_CLOSED = 750
     ELEVATOR_BOTTOM = 2400
     ELEVATOR_TOP = 1318
     
