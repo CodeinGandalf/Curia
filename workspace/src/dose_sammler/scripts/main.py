@@ -168,11 +168,11 @@ def set_servo_pwm(pi, Pin, pwm_value):
     step_const = 5
 
     # Check what servo movement should be generated (four possible states cause there are 2 servos with 2 possible states):
-    if pwm_value == 1100:
+    if pwm_value == 950:
         pwm = 1600
         step_size = -step_const
     elif pwm_value == 1600:
-        pwm = 1100
+        pwm = 950
         step_size = step_const
     else:
         # If there is an other PWM value then known write it onto the pin without smoothing it:
@@ -431,7 +431,7 @@ def main():
     
     # Define the PWM values for the servos:
     GRIPPER_OPEN = 1600
-    GRIPPER_CLOSED = 750
+    GRIPPER_CLOSED = 950
     ELEVATOR_BOTTOM = 2400
     ELEVATOR_TOP = 1318
     
