@@ -61,7 +61,7 @@ def key_callback(msg):
     elif key == 't':
         dGripper = 1600
     elif key == 'g':
-        dGripper = 1100
+        dGripper = 950
     elif key == 'p':
         dx = 0
         dy = 0
