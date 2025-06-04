@@ -95,10 +95,10 @@ def key_callback(msg):
 def mecanum_inv_kinematics(vx, vy, omega, wheelRadius=0.044, L=0.250, W=0.132):
     # Matrix for the inverse kinematics:
     J_inv = 1/wheelRadius*np.matrix([
-        [1, -1, (L + W)],
-        [1, 1, -(L + W)],
+        [1, -1, -(L + W)],
         [1, 1, (L + W)],
-        [1, -1, -(L + W)]
+        [1, 1, -(L + W)],
+        [1, -1, (L + W)]
     ])
     
 
@@ -403,9 +403,12 @@ def driveEngines(wheel_speeds, MAX_PWM, pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR
 
     # Calculate the PMM values:
     pwm_fl = target_FL*max_pwm/max_speed
-    pwm_bl = target_BL*max_pwm/max_speed
+    pwm_fr = 0
+    pwm_bl = 0
+    pwm_br = 0
+    """pwm_bl = target_BL*max_pwm/max_speed
     pwm_fr = target_FR*max_pwm/max_speed
-    pwm_br = target_BR*max_pwm/max_speed
+    pwm_br = target_BR*max_pwm/max_speed"""
 
     # Print the true speed and target speed for all wheels:
     """rospy.loginfo(f'True Speed FL: {trueSpeed_FL:.3f}, Target: {wheel_speeds[0, 0]:.3f}\r')
