@@ -465,7 +465,7 @@ def main(pca):
     rospy.init_node('dose_sammler')
 
     # Setup the shut down function for all engines if the node is shuting down:
-    rospy.on_shutdown(on_shutdown)
+    rospy.on_shutdown(lambda: on_shutdown(pca))
 
     # Start the subscribers:
     rospy.Subscriber("/wheel_speeds", JointState, wheel_speed_callback)
