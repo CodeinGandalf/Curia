@@ -32,6 +32,12 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '../src'))
 
 import searchCanCam as scc
 
+# Define the PWM values for the servos:
+global GRIPPER_OPEN, GRIPPER_CLOSED, ELEVATOR_BOTTOM, ELEVATOR_TOP
+GRIPPER_OPEN = 1600
+GRIPPER_CLOSED = 900
+ELEVATOR_BOTTOM = 2400
+ELEVATOR_TOP = 1318
 
 # Def callback function for the keys:
 def key_callback(msg):
@@ -428,13 +434,6 @@ def main():
 
     # Define the max PWM for the engines:
     MAX_PWM = 65535*0.8
-    
-    # Define the PWM values for the servos:
-    global GRIPPER_OPEN, GRIPPER_CLOSED, ELEVATOR_BOTTOM, ELEVATOR_TOP
-    GRIPPER_OPEN = 1600
-    GRIPPER_CLOSED = 950
-    ELEVATOR_BOTTOM = 2400
-    ELEVATOR_TOP = 1318
     
     # Initalise the PWM values for the servos:
     pwm_gripper = GRIPPER_OPEN
