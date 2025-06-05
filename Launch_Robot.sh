@@ -4,7 +4,9 @@
 cd workspace || exit
 
 # pigpiod mit Root-Rechten starten
-sudo pigpiod
+if ! pgrep -x pigpiod > /dev/null; then
+    sudo pigpiod
+fi
 
 # ROS-Umgebung laden
 source devel/setup.bash
