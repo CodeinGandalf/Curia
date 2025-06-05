@@ -491,7 +491,7 @@ def main(pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR):
     poseCanWorld = None
 
     # Define a constante to calculate a speed target from the distance to drive the robot in the autonome mode to it's target:
-    kp = 0.4
+    kp = 0.2
 
     # Set the bools to check if there is a can in the map data / if there really is a can to false as default:
     posCans = False
@@ -740,6 +740,7 @@ def main(pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR):
         while abs(diff_pose_x) > 0.05 or abs(diff_pose_y) > 0.05:
             if Leuze1 is False or Leuze2 is False:
                 LeuzeBreak = True
+                rospy.logerr(f'Leuze1: {Leuze1}, Leuze2: {Leuze2}\r')
                 break
 
             # Update the dx and dx target, dx will only trigger if the robot starts to drift:
@@ -766,6 +767,7 @@ def main(pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR):
             # Read from the Leuze sensors if they can see the can:
             Leuze1 = GPIO.input(PINLEUZE1)
             Leuze2 = GPIO.input(PINLEUZE2)
+            rospy.loginfo(f'Leuze1: {Leuze1}, Leuze2: {Leuze2}\r')
 
             rate.sleep()
 
