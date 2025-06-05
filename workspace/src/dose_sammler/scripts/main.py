@@ -41,6 +41,8 @@ GRIPPER_CLOSED = 1000
 ELEVATOR_BOTTOM = 2400
 ELEVATOR_TOP = 1318
 
+
+# Setup the function to save the map at the end of the program:
 def save_map(filename="my_map"):
     try:
         subprocess.run(["rosrun", "map_server", "map_saver", "-f", filename], check=True)
@@ -166,10 +168,13 @@ def get_pose():
 def set_motor_pwm(pca, channel_forward, channel_backward, pwm_value, MAX_PWM):
     # If the provided max PWM value is larger then the limit set it to the limit of 80% PWM:
     limit = 65535*0.8
+
+    # Add 4000 to the PWM value in case it is not 0 to be able to start the engines smoother:
     if pwm_value > 0:
         pwm_value += 4000
     elif pwm_value < 0:
         pwm_value -= 4000
+
     # Handle the case that the MAX_PWM is positiv or negativ:
     if MAX_PWM > limit:
         MAX_PWM = limit
@@ -183,16 +188,14 @@ def set_motor_pwm(pca, channel_forward, channel_backward, pwm_value, MAX_PWM):
     if pwm_value >= 0:
         pca.channels[channel_forward].duty_cycle = 0
         pca.channels[channel_backward].duty_cycle = pwm_value
-        #rospy.loginfo(f'Setting motor pwm: {pwm_value} (forward), Channel: {channel_backward}\r')
     else:
         pca.channels[channel_forward].duty_cycle = -pwm_value
         pca.channels[channel_backward].duty_cycle = 0
-        #rospy.loginfo(f'Setting motor pwm: {-pwm_value} (backward), Channel: {channel_forward}\r')
 
 
 # Define the function to stop all engines:
 def stop_all_motors(pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR):
-    # This loop can be called if the node is dieing, so the loop isn't in the main loop anymore. For that reason the pins for the engines etc. are defined in this loop too:
+    # Set the max PWM value to handle the engines:
     MAX_PWM = 65535*0.8
 
     # Inform the user that the engines are turned off:
@@ -248,7 +251,8 @@ def map_callback(msg):
     # Set the latest map variable to global to be able to write onto it:
     global latest_map
 
-    # Generate a deep copy, cause otherwise the variables will never keep the old information of the map / they'll always be updated with this callback too and that's not what is needed in this case:
+    # Generate a deep copy, cause otherwise the variables will never keep the old information of the map / they'll always be updated with this callback too
+    # and that's not what is needed in this case:
     latest_map = copy.deepcopy(msg)
 
 
@@ -369,17 +373,6 @@ def calculatePoseCan(map1, map2):
         return None
 
 
-# Function to convert the PID controller value to an PWM value:
-def pid_output_to_pwm(corr, v_max=3.0, pwm_max=65535*0.8):
-
-    # Clamping the PID output to the interval of [0, v_max]:
-    corr_clamped = max(0, min(corr, v_max))
-    
-    # Scale the values up to the max PWM value:
-    pwm_val = int((corr_clamped / v_max) * pwm_max)
-    return pwm_val
-
-
 # Function to update the PWM vlue for the engines:
 def driveEngines(wheel_speeds, MAX_PWM, pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR):
     # Add the target variables:
@@ -398,21 +391,16 @@ def driveEngines(wheel_speeds, MAX_PWM, pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR
     pwm_fr = target_FR*max_pwm/max_speed
     pwm_br = target_BR*max_pwm/max_speed
 
-    # Print the true speed and target speed for all wheels:
-    """rospy.loginfo(f'True Speed FL: {trueSpeed_FL:.3f}, Target: {wheel_speeds[0, 0]:.3f}\r')
-    rospy.loginfo(f'True Speed FR: {trueSpeed_FR:.3f}, Target: {wheel_speeds[1, 0]:.3f}\r')
-    rospy.loginfo(f'True Speed BL: {trueSpeed_BL:.3f}, Target: {wheel_speeds[2, 0]:.3f}\r')
-    rospy.loginfo(f'True Speed BR: {trueSpeed_BR:.3f}, Target: {wheel_speeds[3, 0]:.3f}\r')"""
-
-     # Update the PWM values for the engines and the servos:
+    # Update the PWM values for the engines and the servos:
     set_motor_pwm(pca, MOTOR_FL[0], MOTOR_FL[1], pwm_fl, MAX_PWM)
     set_motor_pwm(pca, MOTOR_FR[0], MOTOR_FR[1], pwm_fr, MAX_PWM)
     set_motor_pwm(pca, MOTOR_BL[0], MOTOR_BL[1], pwm_bl, MAX_PWM)
     set_motor_pwm(pca, MOTOR_BR[0], MOTOR_BR[1], pwm_br, MAX_PWM)
 
+
 # Setup the function to update the sign of the direction for the speeds of the engines:
 def update_motor_signs(wheel_speeds, old_signs, pub, msg):
-    # Get the new signs:
+    # Get the new signs and invert them to transform the movement into the ROS coordinate system:
     new_signs = [-int(np.sign(wheel_speeds[i, 0])) for i in range(4)]
     
     # If one of the signs has changed, then update the msg:
@@ -432,10 +420,12 @@ def main(pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR):
     # Setup the shut down function for all engines if the node is shuting down:
     rospy.on_shutdown(lambda: on_shutdown(pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR))
 
-    # Start the subscribers:
+    # Setup the subscribers:
     rospy.Subscriber("/wheel_speeds", JointState, wheel_speed_callback)
     rospy.Subscriber('/keyboard_input', String, key_callback)
     rospy.Subscriber("/map", OccupancyGrid, map_callback)
+
+    # Start the publisher:
     pub = rospy.Publisher('/wheel_directions', Int8MultiArray, queue_size=10)
 
     # Define all global variables as global:
@@ -538,7 +528,7 @@ def main(pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR):
     wheel_speeds = mecanum_inv_kinematics(dx, dy, drot)
 
     # Setup the old_signs array to be able to calculate the difference of the signs in the first loop:
-    old_signs = [int(np.sign(wheel_speeds[i, 0])) for i in range(4)]
+    old_signs = [-int(np.sign(wheel_speeds[i, 0])) for i in range(4)]
 
     # Set the rate to 4 Hz:
     rate = rospy.Rate(4)
@@ -550,7 +540,6 @@ def main(pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR):
             rospy.loginfo("Get home pose\r")
             run = False
             poseOrigin = get_pose()
-            rospy.loginfo(f'home pose: {poseOrigin}\r')
             homePose = False
             posCans = True
             dx = 0
@@ -561,13 +550,11 @@ def main(pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR):
         if poseCanManual == True:
             rospy.loginfo("Get can pose\r")
             poseCanWorld = get_pose()
-            rospy.loginfo(f'Pose: can {poseCanWorld}\r')
             poseCanManual = False
         
         # Take a first snap shot of the map without a can in the room:
         if take_map1 is True:
             rospy.loginfo("Taking the snap shot for the first map\r")
-            rospy.loginfo(f'latest map: {latest_map}\r')
             map1 = copy.deepcopy(latest_map)
             rospy.loginfo("Snapshot 1\r")
             take_map1 = False
@@ -587,6 +574,8 @@ def main(pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR):
                 dy = 0
                 drot = 0
                 poseOrigin = get_pose()
+
+        # If the cam picture should be triggered, then call the function to display the cam data:
         if openCam == True:
             scc.find_best_can(camera_index)
             openCam = False
@@ -673,6 +662,7 @@ def main(pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR):
         diff_orient = np.arctan2(target_pose_y, target_pose_x) - yaw
         diff_orient = (diff_orient + np.pi) % (2 * np.pi) - np.pi
         rospy.loginfo("calculated arctan\r")
+
         # Define an tolerance angle, if the robot cuts this tolerance, so the angle difference is below the tolerance, then the robot can correct the y and x offset to drive towards the can and collect it: 
         angle_tolerance = np.deg2rad(20)
 
