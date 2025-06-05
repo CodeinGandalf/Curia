@@ -871,6 +871,7 @@ def main(pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR):
 
         # Get the current pose:
         pose = get_pose()
+        
 
         # Calculate the offset from the current pose and the home pose:
         pose_offset_x = poseOrigin.pose.position.x - pose.pose.position.x
@@ -923,6 +924,9 @@ def main(pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR):
 
             # Get the new pose:
             pose = get_pose()
+            if pose is None:
+                rospy.logerr("Could not get current pose, aborting return to home.")
+                break
 
             # Calculate the new offset:
             pose_offset_x = poseOrigin.pose.position.x - pose.pose.position.x
