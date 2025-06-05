@@ -58,9 +58,9 @@ def key_callback(msg):
     elif key == 'd':
         dy -= 0.02
     elif key == 'e':
-        drot -= 0.15
+        drot -= 0.1
     elif key == 'q':
-        drot += 0.15
+        drot += 0.1
     elif key == 'f':
         dElevator = ELEVATOR_BOTTOM
     elif key == 'r':
