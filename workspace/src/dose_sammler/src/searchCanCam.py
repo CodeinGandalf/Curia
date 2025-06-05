@@ -118,16 +118,14 @@ def find_best_can(camera_index):
                 rospy.loginfo("Reached target 30\r")
                 cap.release()
                 cv2.destroyAllWindows()
-                cv2.waitKey(2)
-                cap.release()
-                cv2.destroyAllWindows()
                 return False
 
         # Show the original and the result:
         cv2.imshow("Original", frame)
         cv2.imshow("Ergebnis", output_frame)
+        cv2.waitKey(1)
 
-        rospy.sleep(1)
+        #rospy.sleep(1)
 
     # Close the openCV windows:
     cap.release()
