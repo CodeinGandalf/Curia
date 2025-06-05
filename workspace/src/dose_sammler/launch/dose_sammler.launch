@@ -41,7 +41,7 @@
     <param name="map_update_interval" value="2.0" /> <!-- Weniger häufiges Kartenupdate für Performance -->
     <param name="maxUrange" value="5.0" /> <!-- Muss zum LiDAR passen -->
     <param name="maxRange" value="5.5" /> <!-- Etwas über maxUrange für Puffer -->
-    <param name="minimumScore" value="100" /> <!-- Höher für bessere Kartengenauigkeit -->
+    <param name="minimumScore" value="150" /> <!-- Höher für bessere Kartengenauigkeit -->
 
     <param name="linearUpdate" value="0.3" /> <!-- Weniger oft neue Scans bei kleinen Bewegungen -->
     <param name="angularUpdate" value="0.5" />
@@ -61,7 +61,7 @@
     <param name="srr" value="0.1" /> <!-- Odometriedrift-Unsicherheit (Rotation durch Translation) -->
     <param name="srt" value="0.2" /> <!-- Odometriedrift-Unsicherheit (Translation durch Rotation) -->
     <param name="str" value="0.1" /> <!-- ... -->
-    <param name="stt" value="0.2" /> <!-- ... -->
+    <param name="stt" value="0.4" /> <!-- ... -->
   </node>
   <!-- Starte dein Hauptprogramm (main.py als ROS-Node, wenn du das willst) -->
   <node pkg="dose_sammler" type="main.py" name="dose_sammler_node" output="screen" />
