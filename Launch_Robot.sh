@@ -7,7 +7,7 @@ cd workspace || exit
 sudo pigpiod
 
 # ROS-Umgebung laden
-source ~/Curia/workspace/devel/setup.bash
+source devel/setup.bash
 
 # ROS-Launch starten
 roslaunch dose_sammler dose_sammler.launch
