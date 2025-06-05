@@ -384,52 +384,15 @@ def driveEngines(wheel_speeds, MAX_PWM, pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR
     target_BL = wheel_speeds[2, 0]
     target_BR = wheel_speeds[3, 0]
 
-    # Set the wheel radius to calculate the angular velocity from the velocity:
-    WHEEL_RADIUS = 0.044
-
-    # Current motor speeds in rad/s:
-    trueSpeed_FL = current_wheel_speeds.get('FL', 0.0)
-    trueSpeed_FR = current_wheel_speeds.get('FR', 0.0)
-    trueSpeed_BL = current_wheel_speeds.get('RL', 0.0)
-    trueSpeed_BR = current_wheel_speeds.get('RR', 0.0)
-
     # Define the max speed and max PWM:
     max_speed = 3
     max_pwm=65535*0.8
 
-    """# Update the setpoint and the constants for the controller:
-    pid_FL = PID(0.8, 0.1, 0.02, setpoint=target_FL)
-    pid_FR = PID(0.8, 0.1, 0.02, setpoint=target_FR)
-    pid_BL = PID(0.8, 0.1, 0.02, setpoint=target_BL)
-    pid_BR = PID(0.8, 0.1, 0.02, setpoint=target_BR)
-
-    # Calculate the correction for the engine:
-    corr_FL = pid_FL(trueSpeed_FL)
-    corr_FR = pid_FR(trueSpeed_FR)
-    corr_BL = pid_BL(trueSpeed_BL)
-    corr_BR = pid_BR(trueSpeed_BR)
-
-    # Calculte the correct PWM values from the PID controller:
-    pwm_fr = pid_output_to_pwm(corr_FR)
-    pwm_fl = pid_output_to_pwm(corr_FL)
-    pwm_bl = pid_output_to_pwm(corr_BL)
-    pwm_br = pid_output_to_pwm(corr_BR)"""
-
-    k = 2.5
-    
-    pwm_bl = ((target_BL - trueSpeed_BL)*k )*max_pwm/max_speed
-    pwm_fl = ((target_FL - trueSpeed_FL)*k )*max_pwm/max_speed
-    pwm_fr = ((target_FR - trueSpeed_FR)*k )*max_pwm/max_speed
-    pwm_br = ((target_BR - trueSpeed_BR)*k )*max_pwm/max_speed
-    rospy.loginfo(f'Calculated PWM values: FL: {pwm_fl:.3f}, FR: {pwm_fr:.3f}, BL: {pwm_bl:.3f}, BR: {pwm_br:.3f}\r')
-    rospy.loginfo(f'Target speeds: FL: {target_FL:.3f}, FR: {target_FR:.3f}, BL: {target_BL:.3f}, BR: {target_BR:.3f}\r')
-    rospy.loginfo(f'True speeds: FL: {trueSpeed_FL:.3f}, FR: {trueSpeed_FR:.3f}, BL: {trueSpeed_BL:.3f}, BR: {trueSpeed_BR:.3f}\r')
-
-    """# Calculate the PMM values:
-    pwm_fl = target_FL*max_pwm/max_speed
-    pwm_bl = target_BL*max_pwm/max_speed
-    pwm_fr = target_FR*max_pwm/max_speed
-    pwm_br = target_BR*max_pwm/max_speed"""
+    # Calculate the PMM values:
+    pwm_fl = target_FL*max_pwm/max_speed + 3000
+    pwm_bl = target_BL*max_pwm/max_speed + 3000
+    pwm_fr = target_FR*max_pwm/max_speed + 3000
+    pwm_br = target_BR*max_pwm/max_speed + 3000
 
     # Print the true speed and target speed for all wheels:
     """rospy.loginfo(f'True Speed FL: {trueSpeed_FL:.3f}, Target: {wheel_speeds[0, 0]:.3f}\r')
@@ -437,40 +400,6 @@ def driveEngines(wheel_speeds, MAX_PWM, pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR
     rospy.loginfo(f'True Speed BL: {trueSpeed_BL:.3f}, Target: {wheel_speeds[2, 0]:.3f}\r')
     rospy.loginfo(f'True Speed BR: {trueSpeed_BR:.3f}, Target: {wheel_speeds[3, 0]:.3f}\r')"""
 
-    # Check if one of the engines has reached the max PWM value:
-    """if pwm_fl > MAX_PWM or pwm_fr > MAX_PWM or pwm_bl > MAX_PWM or pwm_br > MAX_PWM:
-        if pwm_fl > MAX_PWM:
-            # Update the PWM values for the engines and the servos:
-            set_motor_pwm(pca, MOTOR_FL[0], MOTOR_FL[1], pwm_fl, MAX_PWM)
-            set_motor_pwm(pca, MOTOR_FR[0], MOTOR_FR[1], pwm_fr, pwm_fr)
-            set_motor_pwm(pca, MOTOR_BL[0], MOTOR_BL[1], pwm_bl, pwm_bl)
-            set_motor_pwm(pca, MOTOR_BR[0], MOTOR_BR[1], pwm_br, pwm_br)
-        elif pwm_fr > MAX_PWM:
-            # Update the PWM values for the engines and the servos:
-            set_motor_pwm(pca, MOTOR_FL[0], MOTOR_FL[1], pwm_fl, pwm_fl)
-            set_motor_pwm(pca, MOTOR_FR[0], MOTOR_FR[1], pwm_fr, MAX_PWM)
-            set_motor_pwm(pca, MOTOR_BL[0], MOTOR_BL[1], pwm_bl, pwm_bl)
-            set_motor_pwm(pca, MOTOR_BR[0], MOTOR_BR[1], pwm_br, pwm_br)
-        elif pwm_bl > MAX_PWM:
-            # Update the PWM values for the engines and the servos:
-            set_motor_pwm(pca, MOTOR_FL[0], MOTOR_FL[1], pwm_fl, pwm_fl)
-            set_motor_pwm(pca, MOTOR_FR[0], MOTOR_FR[1], pwm_fr, pwm_fr)
-            set_motor_pwm(pca, MOTOR_BL[0], MOTOR_BL[1], pwm_bl, MAX_PWM)
-            set_motor_pwm(pca, MOTOR_BR[0], MOTOR_BR[1], pwm_br, pwm_br)
-        elif pwm_br > MAX_PWM:
-            # Update the PWM values for the engines and the servos:
-            set_motor_pwm(pca, MOTOR_FL[0], MOTOR_FL[1], pwm_fl, pwm_fl)
-            set_motor_pwm(pca, MOTOR_FR[0], MOTOR_FR[1], pwm_fr, pwm_fr)
-            set_motor_pwm(pca, MOTOR_BL[0], MOTOR_BL[1], pwm_bl, pwm_bl)
-            set_motor_pwm(pca, MOTOR_BR[0], MOTOR_BR[1], pwm_br, MAX_PWM)
-    else:
-        # Update the PWM values for the engines and the servos:
-        set_motor_pwm(pca, MOTOR_FL[0], MOTOR_FL[1], pwm_fl, MAX_PWM)
-        set_motor_pwm(pca, MOTOR_FR[0], MOTOR_FR[1], pwm_fr, MAX_PWM)
-        set_motor_pwm(pca, MOTOR_BL[0], MOTOR_BL[1], pwm_bl, MAX_PWM)
-        set_motor_pwm(pca, MOTOR_BR[0], MOTOR_BR[1], pwm_br, MAX_PWM)"""
-    
-    
      # Update the PWM values for the engines and the servos:
     set_motor_pwm(pca, MOTOR_FL[0], MOTOR_FL[1], pwm_fl, MAX_PWM)
     set_motor_pwm(pca, MOTOR_FR[0], MOTOR_FR[1], pwm_fr, MAX_PWM)
