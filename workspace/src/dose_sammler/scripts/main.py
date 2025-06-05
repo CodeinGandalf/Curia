@@ -52,7 +52,7 @@ def save_map(filename="my_map"):
 # Def callback function for the keys:
 def key_callback(msg):
     # Set the used variables to global:
-    global dx, dy, drot, run, dGripper, dElevator, homePose, take_map1, take_map2, poseCanManual
+    global dx, dy, drot, run, dGripper, dElevator, homePose, take_map1, take_map2, poseCanManual, openCam
 
     # Lower the key inputs:
     key = msg.data.lower()
@@ -89,6 +89,8 @@ def key_callback(msg):
     elif key == 'n':
         take_map1 = True
         rospy.loginfo("take map 1\r")
+    elif key == 'c':
+        openCam = True
     elif key == 'm':
         take_map2 = True
         rospy.loginfo("Take map 2\r")
@@ -438,7 +440,7 @@ def main(pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR):
     pub = rospy.Publisher('/wheel_directions', Int8MultiArray, queue_size=10)
 
     # Define all global variables as global:
-    global take_map1, take_map2, dx, dy, drot, dGripper, dElevator, poseCanManual, homePose, run, latest_map, current_wheel_speeds
+    global take_map1, take_map2, dx, dy, drot, dGripper, dElevator, poseCanManual, homePose, run, latest_map, current_wheel_speeds, openCam
 
     # Define the channels for the engines and the servos:
     PWM_PIN_GRIPPER = 18
@@ -469,6 +471,9 @@ def main(pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR):
     # Set the variables to take a snap shot of the variables to none:
     take_map1 = False
     take_map2 = False
+
+    # set the bool to open the cam to true:
+    openCam = True
 
     # Initalise the variables for the movement to 0:
     dx = dy = drot = 0
@@ -583,6 +588,9 @@ def main(pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR):
                 dy = 0
                 drot = 0
                 poseOrigin = get_pose()
+        if openCam == True:
+            scc.find_best_can(camera_index)
+            openCam = False
 
         # Calculate the difference to the values for the movement from the last loop run:
         diff_dx = abs(dx - old_dx)
