@@ -61,7 +61,7 @@
     <param name="srr" value="0.1" /> <!-- Odometriedrift-Unsicherheit (Rotation durch Translation) -->
     <param name="srt" value="0.2" /> <!-- Odometriedrift-Unsicherheit (Translation durch Rotation) -->
     <param name="str" value="0.1" /> <!-- ... -->
-    <param name="stt" value="0.2" /> <!-- ... -->
+    <param name="stt" value="0.2" /> <!-- ... -->
   </node>
   <!-- Starte dein Hauptprogramm (main.py als ROS-Node, wenn du das willst) -->
   <node pkg="dose_sammler" type="main.py" name="dose_sammler_node" output="screen" />
