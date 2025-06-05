@@ -710,7 +710,7 @@ def main(pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR):
         rospy.loginfo(f'orientation robot: {yaw}\r')
 
         # Calculate the difference in the angle pose between the robot and the can and normalize it to be within the -pi to pi interval:
-        diff_orient = np.arctan2(target_pose_y / target_pose_x) - yaw
+        diff_orient = np.arctan2(target_pose_y, target_pose_x) - yaw
         diff_orient = (diff_orient + np.pi) % (2 * np.pi) - np.pi
         rospy.loginfo("calculated arctan\r")
         # Define an tolerance angle, if the robot cuts this tolerance, so the angle difference is below the tolerance, then the robot can correct the y and x offset to drive towards the can and collect it: 
@@ -743,7 +743,7 @@ def main(pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR):
             yaw = yaw - np.pi
 
             # Calculate the new angle difference from the new pose to the can:
-            diff_orient = np.arctan2(target_pose_y / target_pose_x) - yaw
+            diff_orient = np.arctan2(target_pose_y, target_pose_x) - yaw
             diff_orient = (diff_orient + np.pi) % (2 * np.pi) - np.pi
 
             rate.sleep()
