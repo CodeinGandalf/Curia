@@ -13,7 +13,7 @@
   </node>
   
   <node pkg="tf2_ros" type="static_transform_publisher" name="laser_to_base_link"
-        args="-0.164 0.166 0.012 0 0 0 base_link laser" />
+        args="-0.164 0.166 0.13 0 0 0 base_link laser" />
 
     <!-- Starte GMapping für SLAM -->
   <node name="slam_gmapping" pkg="gmapping" type="slam_gmapping" output="log">
