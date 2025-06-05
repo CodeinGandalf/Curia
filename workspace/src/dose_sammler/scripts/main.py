@@ -37,7 +37,7 @@ import searchCanCam as scc
 # Define the PWM values for the servos:
 global GRIPPER_OPEN, GRIPPER_CLOSED, ELEVATOR_BOTTOM, ELEVATOR_TOP
 GRIPPER_OPEN = 1600
-GRIPPER_CLOSED = 1010
+GRIPPER_CLOSED = 1015
 ELEVATOR_BOTTOM = 2400
 ELEVATOR_TOP = 1318
 
@@ -218,7 +218,7 @@ def on_shutdown(pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR):
 # Define the function for the servo pwm:
 def set_servo_pwm(pi, Pin, pwm_value):
     # Work with step size of 5 to smooth the servo movement:
-    step_const = 10
+    step_const = 15
 
     # Check what servo movement should be generated:
     if pwm_value == GRIPPER_CLOSED:
@@ -240,7 +240,7 @@ def set_servo_pwm(pi, Pin, pwm_value):
     for m in range(steps - 1):
         pwm = int(pwm + step_size)
         pi.set_servo_pulsewidth(Pin, pwm)
-        rospy.sleep(0.008)
+        rospy.sleep(0.01)
 
     # Update the pulswidth for the servo:
     pi.set_servo_pulsewidth(Pin, pwm_value)
