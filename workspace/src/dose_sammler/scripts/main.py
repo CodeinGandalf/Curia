@@ -386,7 +386,7 @@ def driveEngines(wheel_speeds, MAX_PWM, pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR
     max_speed = 3
     max_pwm=65535*0.8
 
-    """ # Update the setpoint and the constants for the controller:
+    # Update the setpoint and the constants for the controller:
     pid_FL = PID(0.5, 0.1, 0.02, setpoint=target_FL)
     pid_FR = PID(0.5, 0.1, 0.02, setpoint=target_FR)
     pid_BL = PID(0.5, 0.1, 0.02, setpoint=target_BL)
@@ -402,13 +402,13 @@ def driveEngines(wheel_speeds, MAX_PWM, pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR
     pwm_fr = pid_output_to_pwm(corr_FR)
     pwm_fl = pid_output_to_pwm(corr_FL)
     pwm_bl = pid_output_to_pwm(corr_BL)
-    pwm_br = pid_output_to_pwm(corr_BR)"""
+    pwm_br = pid_output_to_pwm(corr_BR)
 
-    # Calculate the PMM values:
+    """# Calculate the PMM values:
     pwm_fl = target_FL*max_pwm/max_speed
     pwm_bl = target_BL*max_pwm/max_speed
     pwm_fr = target_FR*max_pwm/max_speed
-    pwm_br = target_BR*max_pwm/max_speed
+    pwm_br = target_BR*max_pwm/max_speed"""
 
     # Print the true speed and target speed for all wheels:
     """rospy.loginfo(f'True Speed FL: {trueSpeed_FL:.3f}, Target: {wheel_speeds[0, 0]:.3f}\r')
@@ -538,7 +538,7 @@ def main(pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR):
     poseCanWorld = None
 
     # Define a constante to calculate a speed target from the distance to drive the robot in the autonome mode to it's target:
-    kp = 0.6
+    kp = 0.4
 
     # Set the bools to check if there is a can in the map data / if there really is a can to false as default:
     posCans = False
@@ -781,8 +781,14 @@ def main(pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR):
         # Set the engine targets to 0:
         stop_all_motors(pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR)
 
+        LeuzeBreak = False
+
         # Drive towards the can and stop the robot as soon as it's located about 0.5m in front of the can:
         while abs(diff_pose_x) > 0.5:
+            if Leuze1 and Leuze2:
+                LeuzeBreak = True
+                break
+
             # Update the dx and dx target, dx will only trigger if the robot starts to drift:
             dx = SPEED_X_AUTONOM*np.sign(diff_pose_x)
             dy = -diff_pose_y*kp
@@ -804,37 +810,45 @@ def main(pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR):
             diff_pose_x = target_pose_x - currentPose.pose.position.x
             diff_pose_y = target_pose_y - currentPose.pose.position.y
 
+            # Read from the Leuze sensors if they can see the can:
+            Leuze1 = GPIO.input(PINLEUZE1)
+            Leuze2 = GPIO.input(PINLEUZE2)
+
             rate.sleep()
-        
+
         # Set the engine targets to 0:
         stop_all_motors(pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR)
 
-        # Check if there is a can based upon the cam data:
-        isCan = scc.find_best_can(camera_index)
+        if LeuzeBreak == False:
+            # Check if there is a can based upon the cam data:
+            isCan = scc.find_best_can(camera_index)
+        else:
+            isCan = True
 
         # If there is a can; collect it:
         if isCan:
-            # Check the Leuze sensors. When they see the can stop the engines:
-            while Leuze1 is False and Leuze2 is False:
-                # Drive towards the can; no dy correction and no rotation needed here:
-                dx = SPEED_X_AUTONOM*np.sign(diff_pose_x)
-                dy = 0
-                drot = 0
+            if LeuzeBreak == False:
+                # Check the Leuze sensors. When they see the can stop the engines:
+                while Leuze1 is False and Leuze2 is False:
+                    # Drive towards the can; no dy correction and no rotation needed here:
+                    dx = SPEED_X_AUTONOM*np.sign(diff_pose_x)
+                    dy = 0
+                    drot = 0
 
-                # Update the wheel speeds:
-                wheel_speeds = mecanum_inv_kinematics(dx, dy, drot)
+                    # Update the wheel speeds:
+                    wheel_speeds = mecanum_inv_kinematics(dx, dy, drot)
 
-                # Update the signs for the odom:
-                old_signs = update_motor_signs(wheel_speeds, old_signs, pub, msg)
+                    # Update the signs for the odom:
+                    old_signs = update_motor_signs(wheel_speeds, old_signs, pub, msg)
 
-                # Update the engine PWM targets:
-                driveEngines(wheel_speeds, MAX_PWM, pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR)
+                    # Update the engine PWM targets:
+                    driveEngines(wheel_speeds, MAX_PWM, pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR)
 
-                # Read from the Leuze sensors if they can see the can:
-                Leuze1 = GPIO.input(PINLEUZE1)
-                Leuze2 = GPIO.input(PINLEUZE2)
+                    # Read from the Leuze sensors if they can see the can:
+                    Leuze1 = GPIO.input(PINLEUZE1)
+                    Leuze2 = GPIO.input(PINLEUZE2)
 
-                rate.sleep()
+                    rate.sleep()
 
             # Update the PMW value for the engines and the servos:
             stop_all_motors(pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR)
