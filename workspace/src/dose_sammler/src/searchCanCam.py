@@ -123,9 +123,6 @@ def find_best_can(camera_index):
                 cv2.destroyAllWindows()
                 return False
 
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
-
         # Show the original and the result:
         cv2.imshow("Original", frame)
         cv2.imshow("Ergebnis", output_frame)
