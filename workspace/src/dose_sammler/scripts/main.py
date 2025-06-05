@@ -685,7 +685,7 @@ def main(pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR):
 
     # Check if there is a can detected in the map data:
     if posCans:
-        if poseCanWorld:
+        if poseCanWorld is not None:
             target_pose_x = poseCanWorld.pose.x
             target_pose_y = poseCanWorld.pose.y
         else:
