@@ -637,7 +637,6 @@ def main(pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR):
 
         # If there was a change in the value update the wheel speeds:
         if diff_dx != 0 or diff_dy != 0 or diff_drot != 0 or dx == 0 or dy == 0 or drot == 0:
-            rospy.loginfo(f'Val drot: {drot}\r')
             wheel_speeds = mecanum_inv_kinematics(dx, dy, drot)
         
         # Update the PWM values for the servos only if changed:
