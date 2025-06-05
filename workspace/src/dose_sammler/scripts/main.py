@@ -557,7 +557,7 @@ def main(pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR):
     # Define the constants to drive the robot in the autonom mode:
     SPEED_X_AUTONOM = -0.04
     SPEED_Y_AUTONOM = -0.04
-    SPEED_ROT_Z_AUTONOM = -0.1
+    SPEED_ROT_Z_AUTONOM = 0.1
 
     # Set the bool to run the manual steering of the robot to true:
     run = True
@@ -714,7 +714,7 @@ def main(pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR):
         diff_orient = (diff_orient + np.pi) % (2 * np.pi) - np.pi
         rospy.loginfo("calculated arctan\r")
         # Define an tolerance angle, if the robot cuts this tolerance, so the angle difference is below the tolerance, then the robot can correct the y and x offset to drive towards the can and collect it: 
-        angle_tolerance = np.deg2rad(10)
+        angle_tolerance = np.deg2rad(20)
 
         # Check if the can is within the tolerance:
         while abs(diff_orient) > angle_tolerance:
