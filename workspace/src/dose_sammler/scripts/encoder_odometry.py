@@ -75,7 +75,7 @@ def setup_encoders():
 
 # Define the function to calculate the odometry:
 def calculate_odometry(ticks_delta, dt):
-    TICKS_PER_REV = 400
+    TICKS_PER_REV = 650
     WHEEL_RADIUS = 0.044
     L = 0.250
     W = 0.132
