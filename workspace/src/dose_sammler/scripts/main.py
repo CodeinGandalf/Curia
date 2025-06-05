@@ -367,7 +367,6 @@ def calculatePoseCan(map1, map2):
 
 # Function to convert the PID controller value to an PWM value:
 def pid_output_to_pwm(corr, v_max=3.0, pwm_max=65535*0.8):
-    corr = corr * 10
 
     # Clamping the PID output to the interval of [0, v_max]:
     corr_clamped = max(0, min(corr, v_max))
@@ -399,10 +398,10 @@ def driveEngines(wheel_speeds, MAX_PWM, pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR
     max_pwm=65535*0.8
 
     # Update the setpoint and the constants for the controller:
-    pid_FL = PID(0.5, 0.1, 0.02, setpoint=target_FL)
-    pid_FR = PID(0.5, 0.1, 0.02, setpoint=target_FR)
-    pid_BL = PID(0.5, 0.1, 0.02, setpoint=target_BL)
-    pid_BR = PID(0.5, 0.1, 0.02, setpoint=target_BR)
+    pid_FL = PID(0.8, 0.1, 0.02, setpoint=target_FL)
+    pid_FR = PID(0.8, 0.1, 0.02, setpoint=target_FR)
+    pid_BL = PID(0.8, 0.1, 0.02, setpoint=target_BL)
+    pid_BR = PID(0.8, 0.1, 0.02, setpoint=target_BR)
 
     # Calculate the correction for the engine:
     corr_FL = pid_FL(trueSpeed_FL)
