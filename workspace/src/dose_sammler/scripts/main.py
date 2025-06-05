@@ -375,11 +375,14 @@ def driveEngines(wheel_speeds, MAX_PWM, pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR
     target_BL = wheel_speeds[2, 0]
     target_BR = wheel_speeds[3, 0]
 
+    # Set the wheel radius to calculate the angular velocity from the velocity:
+    WHEEL_RADIUS = 0.044
+
     # Current motor speeds in rad/s:
-    trueSpeed_FL = current_wheel_speeds.get('FL', 0.0)
-    trueSpeed_FR = current_wheel_speeds.get('FR', 0.0)
-    trueSpeed_BL = current_wheel_speeds.get('BL', 0.0)
-    trueSpeed_BR = current_wheel_speeds.get('BR', 0.0)
+    trueSpeed_FL = current_wheel_speeds.get('FL', 0.0) / WHEEL_RADIUS
+    trueSpeed_FR = current_wheel_speeds.get('FR', 0.0) / WHEEL_RADIUS
+    trueSpeed_BL = current_wheel_speeds.get('BL', 0.0) / WHEEL_RADIUS
+    trueSpeed_BR = current_wheel_speeds.get('BR', 0.0) / WHEEL_RADIUS
 
     # Define the max speed and max PWM:
     max_speed = 3
@@ -410,10 +413,10 @@ def driveEngines(wheel_speeds, MAX_PWM, pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR
     pwm_br = target_BR*max_pwm/max_speed
 
     # Print the true speed and target speed for all wheels:
-    """rospy.loginfo(f'True Speed FL: {trueSpeed_FL:.3f}, Target: {wheel_speeds[0, 0]:.3f}\r')
+    rospy.loginfo(f'True Speed FL: {trueSpeed_FL:.3f}, Target: {wheel_speeds[0, 0]:.3f}\r')
     rospy.loginfo(f'True Speed FR: {trueSpeed_FR:.3f}, Target: {wheel_speeds[1, 0]:.3f}\r')
     rospy.loginfo(f'True Speed BL: {trueSpeed_BL:.3f}, Target: {wheel_speeds[2, 0]:.3f}\r')
-    rospy.loginfo(f'True Speed BR: {trueSpeed_BR:.3f}, Target: {wheel_speeds[3, 0]:.3f}\r')"""
+    rospy.loginfo(f'True Speed BR: {trueSpeed_BR:.3f}, Target: {wheel_speeds[3, 0]:.3f}\r')
 
     # Check if one of the engines has reached the max PWM value:
     if pwm_fl > MAX_PWM or pwm_fr > MAX_PWM or pwm_bl > MAX_PWM or pwm_br > MAX_PWM:
