@@ -538,7 +538,7 @@ def main(pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR):
     poseCanWorld = None
 
     # Define a constante to calculate a speed target from the distance to drive the robot in the autonome mode to it's target:
-    kp = 0.2
+    kp = 0.6
 
     # Set the bools to check if there is a can in the map data / if there really is a can to false as default:
     posCans = False
