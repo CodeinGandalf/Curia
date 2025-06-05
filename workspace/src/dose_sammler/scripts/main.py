@@ -686,15 +686,15 @@ def main(pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR):
     # Check if there is a can detected in the map data:
     if posCans:
         if poseCanWorld is not None:
-            target_pose_x = poseCanWorld.pose.x
-            target_pose_y = poseCanWorld.pose.y
+            target_pose_x = poseCanWorld.pose.position.x
+            target_pose_y = poseCanWorld.pose.position.y
         else:
             # Calculate the difference in the pose of the can and the current pose:
             target_pose_x = positionCan[0][0]
             target_pose_y = positionCan[0][1]
         
-        diff_pose_x = target_pose_x - poseOrigin.pose.x
-        diff_pose_y = target_pose_y - poseOrigin.pose.y
+        diff_pose_x = target_pose_x - poseOrigin.pose.position.x
+        diff_pose_y = target_pose_y - poseOrigin.pose.position.y
 
         # Calculate the yaw of the robot in euler angle:
         quat = [poseOrigin.pose.orientation.w, poseOrigin.pose.orientation.x, poseOrigin.pose.orientation.y, poseOrigin.pose.orientation.z]
@@ -767,8 +767,8 @@ def main(pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR):
             currentPose = get_pose()
 
             # Calculate the new difference in the pose:
-            diff_pose_x = target_pose_x - currentPose.pose.x
-            diff_pose_y = target_pose_y - currentPose.pose.y
+            diff_pose_x = target_pose_x - currentPose.pose.position.x
+            diff_pose_y = target_pose_y - currentPose.pose.position.y
 
             rate.sleep()
         
@@ -795,8 +795,8 @@ def main(pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR):
             currentPose = get_pose()
 
             # Calculate the new difference between the current pose and the target:
-            diff_pose_x = target_pose_x - currentPose.pose.x
-            diff_pose_y = target_pose_y - currentPose.pose.y
+            diff_pose_x = target_pose_x - currentPose.pose.position.x
+            diff_pose_y = target_pose_y - currentPose.pose.position.y
 
             rate.sleep()
         
