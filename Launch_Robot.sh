@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # In das ROS-Arbeitsverzeichnis wechseln
-cd workspace || exit
+cd workspace
 
 # pigpiod mit Root-Rechten starten
 if ! pgrep -x pigpiod > /dev/null; then
