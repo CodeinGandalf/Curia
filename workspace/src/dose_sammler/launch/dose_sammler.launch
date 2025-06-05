@@ -16,14 +16,14 @@
         args="-0.164 0.166 0.13 0 0 0 base_link laser" />
 
     <!-- Starte GMapping für SLAM -->
-  <node name="slam_gmapping" pkg="gmapping" type="slam_gmapping" output="log">
+  <!--node name="slam_gmapping" pkg="gmapping" type="slam_gmapping" output="log">
     <param name="base_frame" value="base_link"/>
     <param name="odom_frame" value="odom"/>
     <param name="map_update_interval" value="1.0"/>
     <param name="maxUrange" value="5.0"/>
-    <param name="minimumScore" value="5"/>
+    <param name="minimumScore" value="300"/>
     <param name="maxRange" value="6.0"/>
-    <param name="linearUpdate" value="0.1"/>
+    <param name="linearUpdate" value="0."/>
     <param name="angularUpdate" value="0.2"/>
     <param name="xmin" value="-3"/>
     <param name="ymin" value="-3"/>
@@ -32,11 +32,37 @@
     <param name="delta" value="0.02"/>
     <param name="particles" value="30"/>
     <param name="iterations" value="3"/>
-    <param name="lstep" value="0.02"/>
-    <param name="temporalUpdate" value="1.0"/>
+    <param name="lstep" value="0.05"/>
+    <param name="temporalUpdate" value="10.0"/>
     <remap from="scan" to="/scan_filtered"/>
-  </node>
+  </node-->
 
+  <node name="slam_gmapping" pkg="gmapping" type="slam_gmapping" output="log">
+    <param name="map_update_interval" value="2.0" /> <!-- Weniger häufiges Kartenupdate für Performance -->
+    <param name="maxUrange" value="5.0" /> <!-- Muss zum LiDAR passen -->
+    <param name="maxRange" value="5.5" /> <!-- Etwas über maxUrange für Puffer -->
+    <param name="minimumScore" value="100" /> <!-- Höher für bessere Kartengenauigkeit -->
+
+    <param name="linearUpdate" value="0.3" /> <!-- Weniger oft neue Scans bei kleinen Bewegungen -->
+    <param name="angularUpdate" value="0.5" />
+    <param name="temporalUpdate" value="3.0" />
+
+    <param name="particles" value="30" /> <!-- Reduziert für Performance -->
+    <param name="resampleThreshold" value="0.5" /> <!-- Frühzeitigeres Resampling -->
+
+    <param name="xmin" value="-3" />
+    <param name="ymin" value="-3" />
+    <param name="xmax" value="3" />
+    <param name="ymax" value="3" />
+    <param name="delta" value="0.02" /> <!-- Kartenauflösung: 5cm pro Zelle -->
+
+    <param name="iterations" value="5" /> <!-- Rechenaufwand reduzieren -->
+    <param name="lstep" value="0.05" />
+    <param name="srr" value="0.1" /> <!-- Odometriedrift-Unsicherheit (Rotation durch Translation) -->
+    <param name="srt" value="0.2" /> <!-- Odometriedrift-Unsicherheit (Translation durch Rotation) -->
+    <param name="str" value="0.1" /> <!-- ... -->
+    <param name="stt" value="0.2" /> <!-- ... -->
+  </node>
   <!-- Starte dein Hauptprogramm (main.py als ROS-Node, wenn du das willst) -->
   <node pkg="dose_sammler" type="main.py" name="dose_sammler_node" output="screen" />
 
