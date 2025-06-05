@@ -63,9 +63,9 @@ def key_callback(msg):
     elif key == 's':
         dx -= 0.02
     elif key == 'a':
-        dy += 0.02
+        dy += 0.025
     elif key == 'd':
-        dy -= 0.02
+        dy -= 0.025
     elif key == 'e':
         drot -= 0.05
     elif key == 'q':
