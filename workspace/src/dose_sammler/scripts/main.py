@@ -417,10 +417,10 @@ def driveEngines(wheel_speeds, MAX_PWM, pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR
 
     k = 2
     
-    pwm_bl = ((target_BL - trueSpeed_BL)*k )*max_pwm/max_speed
-    pwm_fl = ((target_FL - trueSpeed_FL)*k )*max_pwm/max_speed
-    pwm_fr = ((target_FR - trueSpeed_FR)*k )*max_pwm/max_speed
-    pwm_br = ((target_BR - trueSpeed_BR)*k )*max_pwm/max_speed
+    pwm_bl += ((target_BL - trueSpeed_BL)*k )
+    pwm_fl += ((target_FL - trueSpeed_FL)*k )
+    pwm_fr += ((target_FR - trueSpeed_FR)*k )
+    pwm_br += ((target_BR - trueSpeed_BR)*k )
     rospy.loginfo(f'Calculated PWM values: FL: {pwm_fl:.3f}, FR: {pwm_fr:.3f}, BL: {pwm_bl:.3f}, BR: {pwm_br:.3f}\r')
     rospy.loginfo(f'Target speeds: FL: {target_FL:.3f}, FR: {target_FR:.3f}, BL: {target_BL:.3f}, BR: {target_BR:.3f}\r')
     rospy.loginfo(f'True speeds: FL: {trueSpeed_FL:.3f}, FR: {trueSpeed_FR:.3f}, BL: {trueSpeed_BL:.3f}, BR: {trueSpeed_BR:.3f}\r')
