@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # In das ROS-Arbeitsverzeichnis wechseln
-cd ros/Curia/workspace || exit
+cd workspace || exit
 
 # pigpiod mit Root-Rechten starten
 sudo pigpiod
