@@ -87,9 +87,9 @@ def calculate_odometry(ticks_delta, dt):
         revs = ticks_delta[name] / TICKS_PER_REV
         w[name] = (wheel_circumference * revs) / dt
 
-    # Inverse kinematics:
-    vx = (w["FL"] + w["FR"] + w["RL"] + w["RR"]) * (r / 4)
-    vy = (-w["FL"] + w["FR"] + w["RL"] - w["RR"]) * (r / 4)
+    # Vorward kinematics:
+    vx = (w["FL"] + w["FR"] + w["RL"] + w["RR"]) * (WHEEL_RADIUS / 4)
+    vy = (-w["FL"] + w["FR"] + w["RL"] - w["RR"]) * (WHEEL_RADIUS / 4)
     wz = (-w["FL"] - w["FR"] + w["RL"] + w["RR"]) / (4 * (L + W))
 
     return vx, vy, wz, w
