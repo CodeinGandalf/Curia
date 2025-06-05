@@ -738,7 +738,7 @@ def main(pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR):
 
         # Drive towards the can and stop the robot as soon as it's located about 0.5m in front of the can:
         while abs(diff_pose_x) > 0.5:
-            if Leuze1 and Leuze2:
+            if Leuze1 is False and Leuze2 is False:
                 LeuzeBreak = True
                 break
 
@@ -782,7 +782,7 @@ def main(pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR):
         if isCan:
             if LeuzeBreak == False:
                 # Check the Leuze sensors. When they see the can stop the engines:
-                while Leuze1 is False and Leuze2 is False:
+                while Leuze1 is True and Leuze2 is True:
                     # Drive towards the can; no dy correction and no rotation needed here:
                     dx = SPEED_X_AUTONOM*np.sign(diff_pose_x)
                     dy = 0
