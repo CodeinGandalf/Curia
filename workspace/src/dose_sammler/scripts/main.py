@@ -169,11 +169,11 @@ def set_motor_pwm(pca, channel_forward, channel_backward, pwm_value, MAX_PWM):
     if pwm_value >= 0:
         pca.channels[channel_forward].duty_cycle = 0
         pca.channels[channel_backward].duty_cycle = pwm_value
-        rospy.loginfo(f'Setting motor pwm: {pwm_value} (forward), Channel: {channel_backward}\r')
+        #rospy.loginfo(f'Setting motor pwm: {pwm_value} (forward), Channel: {channel_backward}\r')
     else:
         pca.channels[channel_forward].duty_cycle = -pwm_value
         pca.channels[channel_backward].duty_cycle = 0
-        rospy.loginfo(f'Setting motor pwm: {-pwm_value} (backward), Channel: {channel_forward}\r')
+        #rospy.loginfo(f'Setting motor pwm: {-pwm_value} (backward), Channel: {channel_forward}\r')
 
 
 # Define the function to stop all engines:
