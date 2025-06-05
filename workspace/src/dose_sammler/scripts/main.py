@@ -106,7 +106,7 @@ def mecanum_inv_kinematics(vx, vy, omega, wheelRadius=0.044, L=0.250, W=0.132):
     wheelSpeeds = J_inv * velocityVector
 
     # Return the wheel speeds:
-    rospy.loginfo(wheelSpeeds.reshape(-1, 1))
+    #rospy.loginfo(wheelSpeeds.reshape(-1, 1))
     return wheelSpeeds.reshape(-1, 1)
 
 
@@ -379,10 +379,10 @@ def driveEngines(wheel_speeds, MAX_PWM, pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR
     WHEEL_RADIUS = 0.044
 
     # Current motor speeds in rad/s:
-    trueSpeed_FL = current_wheel_speeds.get('FL', 0.0) / WHEEL_RADIUS
-    trueSpeed_FR = current_wheel_speeds.get('FR', 0.0) / WHEEL_RADIUS
-    trueSpeed_BL = current_wheel_speeds.get('BL', 0.0) / WHEEL_RADIUS
-    trueSpeed_BR = current_wheel_speeds.get('BR', 0.0) / WHEEL_RADIUS
+    trueSpeed_FL = current_wheel_speeds.get('FL', 0.0)
+    trueSpeed_FR = current_wheel_speeds.get('FR', 0.0)
+    trueSpeed_BL = current_wheel_speeds.get('RL', 0.0)
+    trueSpeed_BR = current_wheel_speeds.get('RR', 0.0)
 
     # Define the max speed and max PWM:
     max_speed = 3
