@@ -415,7 +415,7 @@ def driveEngines(wheel_speeds, MAX_PWM, pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR
     pwm_bl = pid_output_to_pwm(corr_BL)
     pwm_br = pid_output_to_pwm(corr_BR)"""
 
-    k = 3
+    k = 2
     
     pwm_bl = ((target_BL - trueSpeed_BL)*k )*max_pwm/max_speed
     pwm_fl = ((target_FL - trueSpeed_FL)*k )*max_pwm/max_speed
