@@ -555,8 +555,8 @@ def main(pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR):
     GPIO.setup(PINLEUZE2, GPIO.IN)
 
     # Define the constants to drive the robot in the autonom mode:
-    SPEED_X_AUTONOM = -0.04
-    SPEED_Y_AUTONOM = -0.04
+    SPEED_X_AUTONOM = -0.08
+    SPEED_Y_AUTONOM = -0.08
     SPEED_ROT_Z_AUTONOM = 0.15
 
     # Set the bool to run the manual steering of the robot to true:
