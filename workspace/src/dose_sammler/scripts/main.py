@@ -177,12 +177,8 @@ def set_motor_pwm(pca, channel_forward, channel_backward, pwm_value, MAX_PWM):
 
 
 # Define the function to stop all engines:
-def stop_all_motors(pca):
+def stop_all_motors(pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR):
     # This loop can be called if the node is dieing, so the loop isn't in the main loop anymore. For that reason the pins for the engines etc. are defined in this loop too:
-    MOTOR_FR = (0, 1)
-    MOTOR_BR = (2, 3)
-    MOTOR_FL = (4, 5)
-    MOTOR_BL = (6, 7)
     MAX_PWM = 65535*0.8
 
     # Inform the user that the engines are turned off:
@@ -196,9 +192,9 @@ def stop_all_motors(pca):
 
 
 # If the node is shut down, then stop the engines:
-def on_shutdown(pca):
+def on_shutdown(pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR):
     # Call the function to stop the engines:
-    stop_all_motors(pca)
+    stop_all_motors(pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR)
     rospy.loginfo("Shutdown of the node; engines have been stopped.\r")
 
 
@@ -475,12 +471,12 @@ def update_motor_signs(wheel_speeds, old_signs, pub, msg):
 
 
 # Define the main function:
-def main(pca):
+def main(pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR):
     # Init the node:
     rospy.init_node('dose_sammler')
 
     # Setup the shut down function for all engines if the node is shuting down:
-    rospy.on_shutdown(lambda: on_shutdown(pca))
+    rospy.on_shutdown(lambda: on_shutdown(pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR))
 
     # Start the subscribers:
     rospy.Subscriber("/wheel_speeds", JointState, wheel_speed_callback)
@@ -665,7 +661,7 @@ def main(pca):
         rate.sleep()
 
     # Set the engine PWM targets to 0:
-    stop_all_motors(pca)
+    stop_all_motors(pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR)
 
     # Check if there are 2 arrays with some map data in it:
     if map1 is not None and map2 is not None:
@@ -748,7 +744,7 @@ def main(pca):
             rate.sleep()
         
         # Set the engine targets to 0:
-        stop_all_motors(pca)
+        stop_all_motors(pca,  MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR)
 
         # Correct the y offset until the robot is within the tolerance:
         while abs(diff_pose_y) > 0.05:
@@ -776,7 +772,7 @@ def main(pca):
             rate.sleep()
         
         # Set the engine targets to 0:
-        stop_all_motors(pca)
+        stop_all_motors(pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR)
 
         # Drive towards the can and stop the robot as soon as it's located about 0.5m in front of the can:
         while abs(diff_pose_x) > 0.5:
@@ -804,7 +800,7 @@ def main(pca):
             rate.sleep()
         
         # Set the engine targets to 0:
-        stop_all_motors(pca)
+        stop_all_motors(pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR)
 
         # Check if there is a can based upon the cam data:
         isCan = scc.find_best_can(camera_index)
@@ -834,7 +830,7 @@ def main(pca):
                 rate.sleep()
 
             # Update the PMW value for the engines and the servos:
-            stop_all_motors(pca)
+            stop_all_motors(pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR)
 
             # Set the PWM values for the servos to grab the can:
             pwm_gripper = GRIPPER_CLOSED
@@ -892,7 +888,7 @@ def main(pca):
             rate.sleep()
         
         # Set the engine targets to 0:
-        stop_all_motors(pca)
+        stop_all_motors(pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR)
 
         # Get the current pose:
         pose = get_pose()
@@ -927,7 +923,7 @@ def main(pca):
             rate.sleep()
         
         # Stop all engines:
-        stop_all_motors(pca)
+        stop_all_motors(pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR)
         
         # While this offset is to big update the PWM values to get closer to the home pose:
         while abs(pose_offset_x) > 0.05:
@@ -955,7 +951,7 @@ def main(pca):
             rate.sleep()
         
         # Stop all engines:
-        stop_all_motors(pca)
+        stop_all_motors(pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR)
 
         # Set the elevator PWM value to the bottom state:
         pwm_elevator = ELEVATOR_BOTTOM
@@ -982,16 +978,21 @@ if __name__ == '__main__':
     pca = PCA9685(i2c)
     pca.frequency = 1000
 
+    MOTOR_FR = (0, 1)
+    MOTOR_BR = (2, 3)
+    MOTOR_FL = (4, 5)
+    MOTOR_BL = (6, 7)
+
     # Try to execute the main loop:
     try:
-        main(pca)
+        main(pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR)
     except rospy.ROSInterruptException as e:
         rospy.logerr(f'ROS has exited with the exception: {e}\r')
     except Exception as e:
         rospy.logerr(f'Unexpected error: {e}\r')
     # Shut down all engines and clean the GPIOs at the end:
     finally:
-        stop_all_motors(pca)
+        stop_all_motors(pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR)
         GPIO.cleanup()
         rospy.loginfo("Final cleanup done. Exiting.\r")
         sys.exit(0)
