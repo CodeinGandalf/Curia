@@ -716,6 +716,7 @@ def main(pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR):
         # Define an tolerance angle, if the robot cuts this tolerance, so the angle difference is below the tolerance, then the robot can correct the y and x offset to drive towards the can and collect it: 
         angle_tolerance = np.deg2rad(20)
 
+        """
         # Check if the can is within the tolerance:
         while abs(diff_orient) > angle_tolerance:
             # Set the rot target to 0.3 and check in what direction it should turn:
@@ -747,6 +748,7 @@ def main(pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR):
             diff_orient = (diff_orient + np.pi) % (2 * np.pi) - np.pi
 
             rate.sleep()
+        """
         
         # Set the engine targets to 0:
         stop_all_motors(pca,  MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR)
@@ -849,6 +851,7 @@ def main(pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR):
 
         currentPose = get_pose()
 
+        """
         # Calculate the new angle from the new pose:
         _, _, yaw = quat2euler(quat, axes='sxyz')
         quat = [currentPose.pose.orientation.w, currentPose.pose.orientation.x, currentPose.pose.orientation.y, currentPose.pose.orientation.z]
@@ -891,7 +894,7 @@ def main(pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR):
             diff_orient = (diff_orient + np.pi) % (2 * np.pi) - np.pi
 
             rate.sleep()
-        
+        """
         # Set the engine targets to 0:
         stop_all_motors(pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR)
 
