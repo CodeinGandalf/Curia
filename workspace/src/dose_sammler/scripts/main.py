@@ -488,10 +488,6 @@ def main(pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR):
     global take_map1, take_map2, dx, dy, drot, dGripper, dElevator, poseCanManual, homePose, run, latest_map, current_wheel_speeds
 
     # Define the channels for the engines and the servos:
-    MOTOR_BL = (0, 1)
-    MOTOR_FL = (2, 3)
-    MOTOR_BR = (4, 5)
-    MOTOR_FR = (6, 7)
     PWM_PIN_GRIPPER = 18
     PWM_PIN_ELEVATOR = 10
 
