@@ -421,6 +421,9 @@ def driveEngines(wheel_speeds, MAX_PWM, pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR
     pwm_fl = ((target_FL - trueSpeed_FL)*k )*max_pwm/max_speed
     pwm_fr = ((target_FR - trueSpeed_FR)*k )*max_pwm/max_speed
     pwm_br = ((target_BR - trueSpeed_BR)*k )*max_pwm/max_speed
+    rospy.loginfo(f'Calculated PWM values: FL: {pwm_fl:.3f}, FR: {pwm_fr:.3f}, BL: {pwm_bl:.3f}, BR: {pwm_br:.3f}\r')
+    rospy.loginfo(f'Target speeds: FL: {target_FL:.3f}, FR: {target_FR:.3f}, BL: {target_BL:.3f}, BR: {target_BR:.3f}\r')
+    rospy.loginfo(f'True speeds: FL: {trueSpeed_FL:.3f}, FR: {trueSpeed_FR:.3f}, BL: {trueSpeed_BL:.3f}, BR: {trueSpeed_BR:.3f}\r')
 
     """# Calculate the PMM values:
     pwm_fl = target_FL*max_pwm/max_speed
@@ -429,10 +432,10 @@ def driveEngines(wheel_speeds, MAX_PWM, pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR
     pwm_br = target_BR*max_pwm/max_speed"""
 
     # Print the true speed and target speed for all wheels:
-    rospy.loginfo(f'True Speed FL: {trueSpeed_FL:.3f}, Target: {wheel_speeds[0, 0]:.3f}\r')
+    """rospy.loginfo(f'True Speed FL: {trueSpeed_FL:.3f}, Target: {wheel_speeds[0, 0]:.3f}\r')
     rospy.loginfo(f'True Speed FR: {trueSpeed_FR:.3f}, Target: {wheel_speeds[1, 0]:.3f}\r')
     rospy.loginfo(f'True Speed BL: {trueSpeed_BL:.3f}, Target: {wheel_speeds[2, 0]:.3f}\r')
-    rospy.loginfo(f'True Speed BR: {trueSpeed_BR:.3f}, Target: {wheel_speeds[3, 0]:.3f}\r')
+    rospy.loginfo(f'True Speed BR: {trueSpeed_BR:.3f}, Target: {wheel_speeds[3, 0]:.3f}\r')"""
 
     # Check if one of the engines has reached the max PWM value:
     """if pwm_fl > MAX_PWM or pwm_fr > MAX_PWM or pwm_bl > MAX_PWM or pwm_br > MAX_PWM:
