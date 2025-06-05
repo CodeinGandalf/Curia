@@ -557,7 +557,7 @@ def main(pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR):
     # Define the constants to drive the robot in the autonom mode:
     SPEED_X_AUTONOM = -0.04
     SPEED_Y_AUTONOM = -0.04
-    SPEED_ROT_Z_AUTONOM = 0.1
+    SPEED_ROT_Z_AUTONOM = 0.15
 
     # Set the bool to run the manual steering of the robot to true:
     run = True
@@ -703,7 +703,7 @@ def main(pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR):
         _, _, yaw = quat2euler(quat, axes='sxyz')
 
         # Correct the orientation from the RoS coordinate system to the robot orientation:
-        yaw = yaw - np.pi
+        # yaw = yaw - np.pi
 
         rospy.loginfo("Calculated yaw\r")
         
@@ -740,7 +740,7 @@ def main(pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR):
             quat = [currentPose.pose.orientation.w, currentPose.pose.orientation.x, currentPose.pose.orientation.y, currentPose.pose.orientation.z]
 
             # Correct the orientation from the RoS coordinate system to the robot orientation:
-            yaw = yaw - np.pi
+            # yaw = yaw - np.pi
 
             # Calculate the new angle difference from the new pose to the can:
             diff_orient = np.arctan2(target_pose_y, target_pose_x) - yaw
