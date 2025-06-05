@@ -91,6 +91,7 @@ def calculate_odometry(ticks_delta, dt):
     vx = (w["FL"] + w["FR"] + w["RL"] + w["RR"]) / 4
     vy = (-w["FL"] + w["FR"] + w["RL"] - w["RR"]) / 4
     wz = (-w["FL"] - w["FR"] + w["RL"] + w["RR"]) / (4 * (L + W))
+    rospy.loginfo(f"Speeds: {vx}, {vy}, {wz}")
 
     return vx, vy, wz, w
 
