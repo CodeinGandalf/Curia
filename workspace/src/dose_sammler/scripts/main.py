@@ -43,7 +43,7 @@ ELEVATOR_TOP = 1318
 
 
 # Setup the function to save the map at the end of the program:
-def save_map(filename="my_map"):
+def save_map(filename):
     try:
         subprocess.run(["rosrun", "map_server", "map_saver", "-f", filename], check=True)
         rospy.loginfo(f"Map saved as {filename}.pgm and {filename}.yaml")
@@ -947,7 +947,7 @@ def main(pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR):
         set_servo_pwm(pi, PWM_PIN_GRIPPER, pwm_gripper)
 
     # Safe the map:
-    save_map()
+    save_map(os.path.expanduser("~/CuriaMaps/curia_map"))
     rospy.sleep(3)
 
     # End of the program:

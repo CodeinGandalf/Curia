@@ -104,6 +104,8 @@ def find_best_can(camera_index):
                 # Check if the ration diff is within the tolerance:
                 if ratio_diff < tolerance:
                     can = True
+                    cap.release()
+                    cv2.destroyAllWindows()
                     return True
 
         output_frame = frame.copy()
@@ -117,7 +119,8 @@ def find_best_can(camera_index):
                 cap.release()
                 cv2.destroyAllWindows()
                 cv2.waitKey(2)
-
+                cap.release()
+                cv2.destroyAllWindows()
                 return False
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
