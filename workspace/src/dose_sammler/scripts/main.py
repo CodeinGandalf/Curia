@@ -577,7 +577,7 @@ def main(pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR):
 
         # If the cam picture should be triggered, then call the function to display the cam data:
         if openCam == True:
-            scc.find_best_can(camera_index)
+            _ = scc.find_best_can(camera_index)
             openCam = False
 
         # Calculate the difference to the values for the movement from the last loop run:
