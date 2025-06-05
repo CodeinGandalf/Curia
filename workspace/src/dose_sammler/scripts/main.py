@@ -595,6 +595,7 @@ def main(pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR):
             poseOrigin = get_pose()
             rospy.loginfo(f'home pose: {poseOrigin}\r')
             homePose = False
+            posCans = True
             dx = 0
             dy = 0
             drot = 0
@@ -684,9 +685,14 @@ def main(pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR):
 
     # Check if there is a can detected in the map data:
     if posCans:
-        # Calculate the difference in the pose of the can and the current pose:
-        target_pose_x = positionCan[0][0]
-        target_pose_y = positionCan[0][1]
+        if poseCanWorld:
+            target_pose_x = poseCanWorld.pose.x
+            target_pose_y = poseCanWorld.pose.y
+        else:
+            # Calculate the difference in the pose of the can and the current pose:
+            target_pose_x = positionCan[0][0]
+            target_pose_y = positionCan[0][1]
+        
         diff_pose_x = target_pose_x - poseOrigin.pose.x
         diff_pose_y = target_pose_y - poseOrigin.pose.y
 
