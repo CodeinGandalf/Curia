@@ -462,7 +462,7 @@ def main(pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR):
     take_map2 = False
 
     # set the bool to open the cam to true:
-    openCam = True
+    openCam = False
 
     # Initalise the variables for the movement to 0:
     dx = dy = drot = 0
@@ -948,6 +948,7 @@ def main(pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR):
 
     # Safe the map:
     save_map()
+    rospy.sleep(3)
 
     # End of the program:
     rospy.loginfo("Program has finished.\r")
