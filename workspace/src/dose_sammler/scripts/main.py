@@ -509,7 +509,7 @@ def main(pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR):
 
     # Define the constants to drive the robot in the autonom mode:
     SPEED_X_AUTONOM = -0.04
-    SPEED_Y_AUTONOM = -0.08
+    SPEED_Y_AUTONOM = -0.04
     SPEED_ROT_Z_AUTONOM = 0.15
 
     # Set the bool to run the manual steering of the robot to true:
@@ -707,7 +707,7 @@ def main(pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR):
         stop_all_motors(pca,  MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR)
 
         # Correct the y offset until the robot is within the tolerance:
-        while abs(diff_pose_y) > 0.05:
+        """while abs(diff_pose_y) > 0.05:
             # Set the y target to drive sideways:
             dx = 0
             dy = SPEED_Y_AUTONOM*np.sign(diff_pose_y)
@@ -729,7 +729,7 @@ def main(pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR):
             diff_pose_x = target_pose_x - currentPose.pose.position.x
             diff_pose_y = target_pose_y - currentPose.pose.position.y
 
-            rate.sleep()
+            rate.sleep()"""
         
         # Set the engine targets to 0:
         stop_all_motors(pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR)
@@ -875,7 +875,7 @@ def main(pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR):
         pose_offset_y = poseOrigin.pose.position.y - pose.pose.position.y
 
         # While this offset is to big update the PWM values to get closer to the home pose:
-        while abs(pose_offset_y) > 0.05:
+        """while abs(pose_offset_y) > 0.05:
             # Calculate the new speed targets:
             dx = 0
             dy = SPEED_Y_AUTONOM*np.sign(pose_offset_y)
@@ -897,7 +897,7 @@ def main(pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR):
             pose_offset_x = poseOrigin.pose.position.x - pose.pose.position.x
             pose_offset_y = poseOrigin.pose.position.y - pose.pose.position.y
 
-            rate.sleep()
+            rate.sleep()"""
         
         # Stop all engines:
         stop_all_motors(pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR)
