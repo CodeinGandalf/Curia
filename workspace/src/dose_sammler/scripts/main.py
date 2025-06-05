@@ -205,7 +205,7 @@ def on_shutdown(pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR):
     # Call the function to stop the engines:
     stop_all_motors(pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR)
     rospy.loginfo("Shutdown of the node; engines have been stopped.\r")
-    save_map("/home/ros/Curia/saved_map")
+    save_map("/home/ros/Curia_Mapping/curia_map")
 
 
 # Define the function for the servo pwm:
