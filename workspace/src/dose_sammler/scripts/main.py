@@ -169,7 +169,7 @@ def set_motor_pwm(pca, channel_forward, channel_backward, pwm_value, MAX_PWM):
     if pwm_value >= 0:
         pca.channels[channel_forward].duty_cycle = 0
         pca.channels[channel_backward].duty_cycle = pwm_value
-        rospy.loginfo(f'Setting motor pwm: {pwm_value} (forward), Channel: {channel_forward}\r')
+        rospy.loginfo(f'Setting motor pwm: {pwm_value} (forward), Channel: {channel_backward}\r')
     else:
         pca.channels[channel_forward].duty_cycle = -pwm_value
         pca.channels[channel_backward].duty_cycle = 0
@@ -421,7 +421,7 @@ def driveEngines(wheel_speeds, MAX_PWM, pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR
     rospy.loginfo(f'True Speed BR: {trueSpeed_BR:.3f}, Target: {wheel_speeds[3, 0]:.3f}, PWM: {pwm_br}\r')
 
     # Check if one of the engines has reached the max PWM value:
-    if pwm_fl > MAX_PWM or pwm_fr > MAX_PWM or pwm_bl > MAX_PWM or pwm_br > MAX_PWM:
+    """if pwm_fl > MAX_PWM or pwm_fr > MAX_PWM or pwm_bl > MAX_PWM or pwm_br > MAX_PWM:
         if pwm_fl > MAX_PWM:
             # Update the PWM values for the engines and the servos:
             set_motor_pwm(pca, MOTOR_FL[0], MOTOR_FL[1], pwm_fl, MAX_PWM)
@@ -451,8 +451,14 @@ def driveEngines(wheel_speeds, MAX_PWM, pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR
         set_motor_pwm(pca, MOTOR_FL[0], MOTOR_FL[1], pwm_fl, MAX_PWM)
         set_motor_pwm(pca, MOTOR_FR[0], MOTOR_FR[1], pwm_fr, MAX_PWM)
         set_motor_pwm(pca, MOTOR_BL[0], MOTOR_BL[1], pwm_bl, MAX_PWM)
-        set_motor_pwm(pca, MOTOR_BR[0], MOTOR_BR[1], pwm_br, MAX_PWM)
-
+        set_motor_pwm(pca, MOTOR_BR[0], MOTOR_BR[1], pwm_br, MAX_PWM)"""
+    
+    
+     # Update the PWM values for the engines and the servos:
+    set_motor_pwm(pca, MOTOR_FL[0], MOTOR_FL[1], pwm_fl, MAX_PWM)
+    set_motor_pwm(pca, MOTOR_FR[0], MOTOR_FR[1], pwm_fr, MAX_PWM)
+    set_motor_pwm(pca, MOTOR_BL[0], MOTOR_BL[1], pwm_bl, MAX_PWM)
+    set_motor_pwm(pca, MOTOR_BR[0], MOTOR_BR[1], pwm_br, MAX_PWM)
 
 # Setup the function to update the sign of the direction for the speeds of the engines:
 def update_motor_signs(wheel_speeds, old_signs, pub, msg):
