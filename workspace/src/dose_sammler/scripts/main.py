@@ -164,7 +164,7 @@ def set_motor_pwm(pca, channel_forward, channel_backward, pwm_value, MAX_PWM):
 
     # Clip the PWM value if needed:
     pwm_value = int(np.clip(pwm_value, -MAX_PWM, MAX_PWM))
-
+    rospy.loginfo(f'Setting motor pwm: {pwm_value}, Channel: {channel_forward}\r')
     # Check if the engine turns forward or backwards:
     if pwm_value >= 0:
         pca.channels[channel_forward].duty_cycle = 0
