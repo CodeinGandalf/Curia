@@ -41,13 +41,13 @@
     <param name="map_update_interval" value="2.0" /> <!-- Weniger häufiges Kartenupdate für Performance -->
     <param name="maxUrange" value="5.0" /> <!-- Muss zum LiDAR passen -->
     <param name="maxRange" value="5.5" /> <!-- Etwas über maxUrange für Puffer -->
-    <param name="minimumScore" value="150" /> <!-- Höher für bessere Kartengenauigkeit -->
+    <param name="minimumScore" value="200" /> <!-- Höher für bessere Kartengenauigkeit -->
 
-    <param name="linearUpdate" value="0.3" /> <!-- Weniger oft neue Scans bei kleinen Bewegungen -->
-    <param name="angularUpdate" value="0.5" />
-    <param name="temporalUpdate" value="3.0" />
+    <param name="linearUpdate" value="0.1" /> <!-- Weniger oft neue Scans bei kleinen Bewegungen -->
+    <param name="angularUpdate" value="0.15" />
+    <param name="temporalUpdate" value="2.0" />
 
-    <param name="particles" value="30" /> <!-- Reduziert für Performance -->
+    <param name="particles" value="40" /> <!-- Reduziert für Performance -->
     <param name="resampleThreshold" value="0.5" /> <!-- Frühzeitigeres Resampling -->
 
     <param name="xmin" value="-3" />
