@@ -148,7 +148,7 @@ def main():
         t.header.stamp = now
         t.header.frame_id = "odom"
         t.child_frame_id = "base_link"
-        t.transform.translation.x = -x
+        t.transform.translation.x = x
         t.transform.translation.y = y
         t.transform.translation.z = 0.0
         t.transform.rotation.x = odom_quat[0]
