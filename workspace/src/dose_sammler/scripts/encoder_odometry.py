@@ -19,10 +19,10 @@ import threading
 
 # Define the pins for the encoder:
 ENCODER_PINS = {
-    "RL_A": 22, "RL_B": 27,
-    "RR_A": 24, "RR_B": 23,
-    "FL_A": 19, "FL_B": 13,
-    "FR_A": 11, "FR_B": 0
+    "FL_A": 22, "FL_B": 27,
+    "FR_A": 24, "FR_B": 23,
+    "RL_A": 19, "RL_B": 13,
+    "RR_A": 11, "RR_B": 0
 }
 
 # Tick counter:
