@@ -73,10 +73,6 @@ def show_colored_map(grid):
     bounds = [-1.5, -0.5, 0.5, 1.5, 2.5]
     norm = mcolors.BoundaryNorm(bounds, cmap.N)
 
-    plt.imshow(grid, cmap=cmap, norm=norm)
-    plt.title("Map mit Dose (rot = Dose)")
-    plt.colorbar(ticks=[-1, 0, 1, 2])
-    plt.show()
 
 
 def crop_map(map_array, margin):
@@ -176,30 +172,21 @@ def add_noise_to_map(occupancy_grid, noise_ratio=0.01, seed=None):
 
 
 def main():
-    yaml_file = 'test_map.yaml'
+    yaml_file_base = 'my_map_no_dose.yaml'
+    yaml_data_base = read_yaml(yaml_file_base)
+    pgm_file_base = yaml_data_base['image']
+    pgm_data_base = read_pgm_image(pgm_file_base)
+
+    occupancy_grid = convert_map_to_occupancy(pgm_data_base, yaml_data_base)
+
+    yaml_file = 'my_map_dose.yaml'
     yaml_data = read_yaml(yaml_file)
     pgm_file = yaml_data['image']
     pgm_data = read_pgm_image(pgm_file)
 
-    occupancy_grid = convert_map_to_occupancy(pgm_data, yaml_data)
+    occupancy_grid_dose = convert_map_to_occupancy(pgm_data, yaml_data)
 
     height, width = occupancy_grid.shape
-
-    occupancy_grid_manipulated, placed_can_world = manipulate_map(
-        occupancy_grid, yaml_data)
-
-    # show_colored_map(occupancy_grid_manipulated)
-
-    # Füge Rauschen zur manipulierten Map hinzu
-    noisy_manipulated_grid = add_noise_to_map(
-        occupancy_grid_manipulated, noise_ratio=0.01, seed=42)
-
-    # Zeige auch verrauschte Map
-    # show_colored_map(noisy_manipulated_grid)
-    fig = plt.figure(1)
-    plt.imshow(occupancy_grid, cmap='gray')
-    plt.title("occupancy_grid Cropping")
-    plt.colorbar()
 
     crop_x = 100
     crop_y = 100
@@ -209,13 +196,7 @@ def main():
     yaml_data['origin'][0] += crop_x * yaml_data['resolution']
     yaml_data['origin'][1] += crop_y * yaml_data['resolution']
 
-    fig = plt.figure(2)
-    plt.imshow(occupancy_grid, cmap='gray')
-    plt.title("occupancy_grid nach Cropping")
-    plt.colorbar()
-    plt.show()
-
-    pose = calculatePoseCan(occupancy_grid, noisy_manipulated_grid)
+    pose = calculatePoseCan(occupancy_grid, occupancy_grid_dose)
 
     x_world = None
     y_world = None
@@ -243,16 +224,7 @@ def main():
             plt.show()
             """
 
-            # Zeige Abweichung (für Evaluation)
-            placed_x, placed_y = placed_can_world
-            dx = x_world - placed_x
-            dy = y_world - placed_y
-            dist = np.hypot(dx, dy)
-
-            print(f"\nPlatzierte Dose: ({placed_x:.3f}, {placed_y:.3f})")
             print(f"Erkannte Dose:   ({x_world:.3f}, {y_world:.3f})")
-            print(
-                f"Abweichung: Δx = {dx:.3f} m, Δy = {dy:.3f} m, Distanz = {dist:.3f} m")
         else:
             print("Keine Dose gefunden / zu viel Rauschen")
     else:
