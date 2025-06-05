@@ -19,20 +19,19 @@
   <node name="slam_gmapping" pkg="gmapping" type="slam_gmapping" output="log">
     <param name="base_frame" value="base_link"/>
     <param name="odom_frame" value="odom"/>
-    <param name="map_update_interval" value="2.0"/>
+    <param name="map_update_interval" value="1.0"/>
     <param name="maxUrange" value="5.0"/>
     <param name="minimumScore" value="5"/>
     <param name="maxRange" value="6.0"/>
     <param name="linearUpdate" value="0.1"/>
     <param name="angularUpdate" value="0.2"/>
-    <param name="delta" value="0.05"/>
     <param name="xmin" value="-3"/>
     <param name="ymin" value="-3"/>
     <param name="xmax" value="3"/>
     <param name="ymax" value="3"/>
     <param name="delta" value="0.02"/>
-    <param name="particles" value="150"/>
-    <param name="iterations" value="7"/>
+    <param name="particles" value="30"/>
+    <param name="iterations" value="3"/>
     <param name="lstep" value="0.02"/>
     <param name="temporalUpdate" value="1.0"/>
     <remap from="scan" to="/scan_filtered"/>
