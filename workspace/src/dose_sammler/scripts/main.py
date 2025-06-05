@@ -164,7 +164,10 @@ def get_pose():
 def set_motor_pwm(pca, channel_forward, channel_backward, pwm_value, MAX_PWM):
     # If the provided max PWM value is larger then the limit set it to the limit of 80% PWM:
     limit = 65535*0.8
-
+    if pwm_value > 0:
+        pwm_value += 4000
+    elif pwm_value < 0:
+        pwm_value -= 4000
     # Handle the case that the MAX_PWM is positiv or negativ:
     if MAX_PWM > limit:
         MAX_PWM = limit
@@ -389,10 +392,10 @@ def driveEngines(wheel_speeds, MAX_PWM, pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR
     max_pwm=65535*0.8
 
     # Calculate the PMM values:
-    pwm_fl = target_FL*max_pwm/max_speed + 3000
-    pwm_bl = target_BL*max_pwm/max_speed + 3000
-    pwm_fr = target_FR*max_pwm/max_speed + 3000
-    pwm_br = target_BR*max_pwm/max_speed + 3000
+    pwm_fl = target_FL*max_pwm/max_speed
+    pwm_bl = target_BL*max_pwm/max_speed
+    pwm_fr = target_FR*max_pwm/max_speed
+    pwm_br = target_BR*max_pwm/max_speed
 
     # Print the true speed and target speed for all wheels:
     """rospy.loginfo(f'True Speed FL: {trueSpeed_FL:.3f}, Target: {wheel_speeds[0, 0]:.3f}\r')
