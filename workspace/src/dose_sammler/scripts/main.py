@@ -685,7 +685,9 @@ def main(pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR):
 
     # Check if there is a can detected in the map data:
     if posCans:
+        rospy.loginfo("Entered posCans\r")
         if poseCanWorld is not None:
+            rospy.loginfo("Defne target coords\r")
             target_pose_x = poseCanWorld.pose.position.x
             target_pose_y = poseCanWorld.pose.position.y
         else:
@@ -702,13 +704,15 @@ def main(pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR):
 
         # Correct the orientation from the RoS coordinate system to the robot orientation:
         yaw = yaw - np.pi
+
+        rospy.loginfo("Calculated yaw\r")
         
         rospy.loginfo(f'orientation robot: {yaw}\r')
 
         # Calculate the difference in the angle pose between the robot and the can and normalize it to be within the -pi to pi interval:
         diff_orient = np.arctan2(target_pose_y / target_pose_x) - yaw
         diff_orient = (diff_orient + np.pi) % (2 * np.pi) - np.pi
-
+        rospy.loginfo("calculated arctan\r")
         # Define an tolerance angle, if the robot cuts this tolerance, so the angle difference is below the tolerance, then the robot can correct the y and x offset to drive towards the can and collect it: 
         angle_tolerance = np.deg2rad(10)
 
