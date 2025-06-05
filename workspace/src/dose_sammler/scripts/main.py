@@ -179,10 +179,10 @@ def set_motor_pwm(pca, channel_forward, channel_backward, pwm_value, MAX_PWM):
 # Define the function to stop all engines:
 def stop_all_motors(pca):
     # This loop can be called if the node is dieing, so the loop isn't in the main loop anymore. For that reason the pins for the engines etc. are defined in this loop too:
-    MOTOR_BL = (0, 1)
-    MOTOR_FL = (2, 3)
-    MOTOR_BR = (4, 5)
-    MOTOR_FR = (6, 7)
+    MOTOR_FR = (0, 1)
+    MOTOR_BR = (2, 3)
+    MOTOR_FL = (4, 5)
+    MOTOR_BL = (6, 7)
     MAX_PWM = 65535*0.8
 
     # Inform the user that the engines are turned off:
