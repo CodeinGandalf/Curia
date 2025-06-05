@@ -397,7 +397,7 @@ def driveEngines(wheel_speeds, MAX_PWM, pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR
     max_speed = 3
     max_pwm=65535*0.8
 
-    # Update the setpoint and the constants for the controller:
+    """# Update the setpoint and the constants for the controller:
     pid_FL = PID(0.8, 0.1, 0.02, setpoint=target_FL)
     pid_FR = PID(0.8, 0.1, 0.02, setpoint=target_FR)
     pid_BL = PID(0.8, 0.1, 0.02, setpoint=target_BL)
@@ -413,7 +413,14 @@ def driveEngines(wheel_speeds, MAX_PWM, pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR
     pwm_fr = pid_output_to_pwm(corr_FR)
     pwm_fl = pid_output_to_pwm(corr_FL)
     pwm_bl = pid_output_to_pwm(corr_BL)
-    pwm_br = pid_output_to_pwm(corr_BR)
+    pwm_br = pid_output_to_pwm(corr_BR)"""
+
+    k = 0.4
+    
+    pwm_fl = ((target_FL - trueSpeed_FL)*k + target_FL)*max_pwm/max_speed
+    pwm_bl = ((target_BL - trueSpeed_BL)*k + target_BL)*max_pwm/max_speed
+    pwm_fr = ((target_FR - trueSpeed_FR)*k + target_FR)*max_pwm/max_speed
+    pwm_br = ((target_BR - trueSpeed_BR)*k + target_BR)*max_pwm/max_speed
 
     """# Calculate the PMM values:
     pwm_fl = target_FL*max_pwm/max_speed
