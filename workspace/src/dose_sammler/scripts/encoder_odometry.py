@@ -90,7 +90,7 @@ def calculate_odometry(ticks_delta, dt):
     # Vorward kinematics:
     vx = (w["FL"] + w["FR"] + w["RL"] + w["RR"]) / 4
     vy = (-w["FL"] + w["FR"] + w["RL"] - w["RR"]) / 4
-    wz = (-w["FL"] - w["FR"] + w["RL"] + w["RR"]) / (4 * (L + W))
+    wz = -(-w["FL"] - w["FR"] + w["RL"] + w["RR"]) / (4 * (L + W))
 
     return vx, vy, wz, w
 
