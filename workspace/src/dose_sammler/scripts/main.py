@@ -508,7 +508,7 @@ def main(pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR):
     GPIO.setup(PINLEUZE2, GPIO.IN)
 
     # Define the constants to drive the robot in the autonom mode:
-    SPEED_X_AUTONOM = -0.08
+    SPEED_X_AUTONOM = -0.04
     SPEED_Y_AUTONOM = -0.08
     SPEED_ROT_Z_AUTONOM = 0.15
 
@@ -774,13 +774,15 @@ def main(pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR):
 
         if LeuzeBreak == False:
             # Check if there is a can based upon the cam data:
-            isCan = scc.find_best_can(camera_index)
+            #isCan = scc.find_best_can(camera_index)
+            isCan = True
+            LeuzeBreak = True
         else:
             isCan = True
 
         # If there is a can; collect it:
         if isCan:
-            if LeuzeBreak == False:
+            """if LeuzeBreak == False:
                 # Check the Leuze sensors. When they see the can stop the engines:
                 while Leuze1 is True and Leuze2 is True:
                     # Drive towards the can; no dy correction and no rotation needed here:
@@ -801,7 +803,7 @@ def main(pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR):
                     Leuze1 = GPIO.input(PINLEUZE1)
                     Leuze2 = GPIO.input(PINLEUZE2)
 
-                    rate.sleep()
+                    rate.sleep()"""
 
             # Update the PMW value for the engines and the servos:
             stop_all_motors(pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR)
