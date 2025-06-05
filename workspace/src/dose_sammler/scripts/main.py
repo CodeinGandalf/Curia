@@ -907,7 +907,7 @@ def main(pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR):
         # While this offset is to big update the PWM values to get closer to the home pose:
         while abs(pose_offset_x) > 0.1:
             # Calculate the new speed targets:
-            rospy.roserr("Return to home pose\r")
+            rospy.logerr("Return to home pose\r")
             dx = SPEED_X_AUTONOM*np.sign(pose_offset_x)
             dy = -pose_offset_y*kp
             drot = 0
