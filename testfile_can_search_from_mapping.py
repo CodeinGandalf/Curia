@@ -74,7 +74,6 @@ def show_colored_map(grid):
     norm = mcolors.BoundaryNorm(bounds, cmap.N)
 
 
-
 def crop_map(map_array, margin):
     return map_array[margin:-margin, margin:-margin]
 
@@ -122,18 +121,28 @@ def calculatePoseCan(map1_array, map2_array):
         map1_cropped = map1_cropped[-final_height:, :final_width]
         map2_cropped = map2_cropped[-final_height:, :final_width]
 
-    mask = map2_cropped > map1_cropped
-    structure = np.ones((3, 3), dtype=int)
+    mask = map2_cropped < map1_cropped
+    structure = structure = np.array([[0, 1, 0], [1, 1, 1], [0, 1, 0]])
+
     labeled_mask, num_features = label(mask, structure=structure)
 
     world_x = []
     world_y = []
     area = []
 
+    # Visualisierung der Differenzmaske
+    plt.figure(figsize=(6, 6))
+    plt.imshow(mask, cmap='gray')
+    plt.title("Differenzmaske (mögliche neue Objekte)")
+    plt.xlabel("X (Pixel)")
+    plt.ylabel("Y (Pixel)")
+    plt.grid(False)
+    plt.show()
+
     for i in range(1, num_features + 1):
         region = (labeled_mask == i)
         check = np.sum(region)*resolution**2*10000
-        if check >= 36 and check <= 64:
+        if check >= 14 and check <= 18:
             area.append(np.sum(region)*resolution**2*10000)
             centroid = center_of_mass(region)
             y_idx, x_idx = centroid
@@ -141,34 +150,6 @@ def calculatePoseCan(map1_array, map2_array):
             world_y.append(min_origin_y + (final_height - y_idx) * resolution)
 
     return list(zip(world_x, world_y, area))
-
-
-def add_noise_to_map(occupancy_grid, noise_ratio=0.01, seed=None):
-    """
-    Füge Rauschen zu einer Karte hinzu, indem ein kleiner Prozentsatz der Zellen zufällig verändert wird.
-    :param occupancy_grid: Die Karte als numpy-Array.
-    :param noise_ratio: Anteil der zu verändernden Pixel (z.B. 0.01 = 1%).
-    :param seed: Optionaler Seed für Reproduzierbarkeit.
-    :return: Neue Karte mit Rauschen.
-    """
-    if seed is not None:
-        np.random.seed(seed)
-
-    noisy_grid = occupancy_grid.copy()
-    num_cells = occupancy_grid.size
-    num_noisy = int(noise_ratio * num_cells)
-
-    indices = np.unravel_index(np.random.choice(
-        num_cells, num_noisy, replace=False), occupancy_grid.shape)
-    for y, x in zip(*indices):
-        current = noisy_grid[y, x]
-        if current == 0:
-            noisy_grid[y, x] = -1  # frei → unbekannt
-        elif current == 1:
-            noisy_grid[y, x] = 0   # belegt → frei
-        elif current == -1:
-            noisy_grid[y, x] = 0   # unbekannt → frei
-    return noisy_grid
 
 
 def main():
@@ -186,50 +167,42 @@ def main():
 
     occupancy_grid_dose = convert_map_to_occupancy(pgm_data, yaml_data)
 
-    height, width = occupancy_grid.shape
-
-    crop_x = 100
-    crop_y = 100
-    # occupancy_grid = occupancy_grid[:-crop_y, :]
-
-    # origin im YAML-Dict anpassen (nur x- und y-Werte)
-    yaml_data['origin'][0] += crop_x * yaml_data['resolution']
-    yaml_data['origin'][1] += crop_y * yaml_data['resolution']
-
     pose = calculatePoseCan(occupancy_grid, occupancy_grid_dose)
+
+    print(pose)
 
     x_world = None
     y_world = None
     area = None
 
     if pose:
+        resolution = yaml_data['resolution']
+        origin_x, origin_y = yaml_data['origin'][:2]
+        detected_cans = []  # Liste zum Speichern der Zellenkoordinaten
+
         for pos in pose:
-            if pos[2] >= 36 and pos[2] <= 64:
-                # Finde größte Fläche = Dose
-                x_world, y_world, area = pos
+            x_world, y_world, area = pos
 
-        if x_world:
-            resolution = yaml_data['resolution']
-            origin_x, origin_y = yaml_data['origin'][:2]
-
+            # Weltkoordinaten → Zellenkoordinaten
             x_cell = int(round((x_world - origin_x) / resolution))
             y_cell = int(round((y_world - origin_y) / resolution))
 
-            """
-            # Plot grünes X auf manipulierte Map
-            fig = plt.figure()
-            plt.imshow(occupancy_grid_manipulated, cmap='gray')
-            plt.plot(x_cell, y_cell, 'gx', markersize=12, markeredgewidth=2)
-            plt.title("Dose erkannt (grünes X)")
-            plt.show()
-            """
+            detected_cans.append((x_cell, y_cell))  # speichern
 
-            print(f"Erkannte Dose:   ({x_world:.3f}, {y_world:.3f})")
+        if detected_cans:
+            fig = plt.figure()
+            plt.imshow(occupancy_grid_dose, cmap='gray')
+
+            for (x_cell, y_cell) in detected_cans:
+                plt.plot(x_cell, y_cell, 'gx',
+                         markersize=12, markeredgewidth=2)
+
+            plt.title("Alle erkannten Dosen (grünes X)")
+            plt.show()
         else:
-            print("Keine Dose gefunden / zu viel Rauschen")
+            print("Keine Dose mit gültiger Fläche erkannt.")
     else:
         print("Keine Dose gefunden.")
-    print(pose)
 
 
 if __name__ == '__main__':
