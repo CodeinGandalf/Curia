@@ -27,6 +27,7 @@ from sensor_msgs.msg import JointState
 from std_msgs.msg import Int8MultiArray
 from simple_pid import PID
 from transforms3d.euler import quat2euler
+import subprocess
 
 # Define the path to the folder of the subfiles:
 sys.path.append(os.path.join(os.path.dirname(__file__), '../src'))
@@ -39,6 +40,14 @@ GRIPPER_OPEN = 1600
 GRIPPER_CLOSED = 1000
 ELEVATOR_BOTTOM = 2400
 ELEVATOR_TOP = 1318
+
+def save_map(filename="my_map"):
+    try:
+        subprocess.run(["rosrun", "map_server", "map_saver", "-f", filename], check=True)
+        rospy.loginfo(f"Map saved as {filename}.pgm and {filename}.yaml")
+    except Exception as e:
+        rospy.logerr(f"Failed to save map: {e}")
+
 
 # Def callback function for the keys:
 def key_callback(msg):
@@ -196,6 +205,7 @@ def on_shutdown(pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR):
     # Call the function to stop the engines:
     stop_all_motors(pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR)
     rospy.loginfo("Shutdown of the node; engines have been stopped.\r")
+    save_map("/home/ros/Curia/saved_map")
 
 
 # Define the function for the servo pwm:
