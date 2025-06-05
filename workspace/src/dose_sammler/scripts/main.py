@@ -210,7 +210,6 @@ def on_shutdown(pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR):
     # Call the function to stop the engines:
     stop_all_motors(pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR)
     rospy.loginfo("Shutdown of the node; engines have been stopped.\r")
-    #save_map("/home/ros/Curia_Mapping/curia_map")
 
 
 # Define the function for the servo pwm:
@@ -956,6 +955,9 @@ def main(pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR):
 
         # Update the PWM value for the gripper to open the gripper:
         set_servo_pwm(pi, PWM_PIN_GRIPPER, pwm_gripper)
+
+    # Safe the map:
+    save_map()
 
     # End of the program:
     rospy.loginfo("Program has finished.\r")
