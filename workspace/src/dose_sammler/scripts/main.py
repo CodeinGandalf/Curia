@@ -738,7 +738,7 @@ def main(pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR):
 
         # Drive towards the can and stop the robot as soon as it's located about 0.5m in front of the can:
         while abs(diff_pose_x) > 0.05 or abs(diff_pose_y) > 0.05:
-            if Leuze1 is False and Leuze2 is False:
+            if Leuze1 is False or Leuze2 is False:
                 LeuzeBreak = True
                 break
 
