@@ -558,6 +558,7 @@ def main(pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR):
             map1 = copy.deepcopy(latest_map)
             rospy.loginfo("Snapshot 1\r")
             take_map1 = False
+            save_map(os.path.expanduser("~/CuriaMaps/map_without_can"))
 
         # Take a second snap shot of the map, now with the can in the room:
         if take_map2 is True:
@@ -574,6 +575,7 @@ def main(pca, MOTOR_FL, MOTOR_FR, MOTOR_BL, MOTOR_BR):
                 dy = 0
                 drot = 0
                 poseOrigin = get_pose()
+                save_map(os.path.expanduser("~/CuriaMaps/map_with_can"))
 
         # If the cam picture should be triggered, then call the function to display the cam data:
         if openCam == True:
