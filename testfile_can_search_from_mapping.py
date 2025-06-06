@@ -142,7 +142,7 @@ def calculatePoseCan(map1_array, map2_array):
     for i in range(1, num_features + 1):
         region = (labeled_mask == i)
         check = np.sum(region)*resolution**2*10000
-        if check >= 14 and check <= 18:
+        if check >= 25 and check <= 30:
             area.append(np.sum(region)*resolution**2*10000)
             centroid = center_of_mass(region)
             y_idx, x_idx = centroid
@@ -153,14 +153,14 @@ def calculatePoseCan(map1_array, map2_array):
 
 
 def main():
-    yaml_file_base = 'my_map_no_dose.yaml'
+    yaml_file_base = 'map_without_can.yaml'
     yaml_data_base = read_yaml(yaml_file_base)
     pgm_file_base = yaml_data_base['image']
     pgm_data_base = read_pgm_image(pgm_file_base)
 
     occupancy_grid = convert_map_to_occupancy(pgm_data_base, yaml_data_base)
 
-    yaml_file = 'my_map_dose.yaml'
+    yaml_file = 'map_with_can.yaml'
     yaml_data = read_yaml(yaml_file)
     pgm_file = yaml_data['image']
     pgm_data = read_pgm_image(pgm_file)

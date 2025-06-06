@@ -1,4 +1,4 @@
-image: /home/ros/CuriaMaps/map_without_can.pgm
+image: map_without_can.pgm
 resolution: 0.020000
 origin: [-15.160000, -3.000000, 0.000000]
 negate: 0
