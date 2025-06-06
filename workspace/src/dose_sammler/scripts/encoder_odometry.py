@@ -12,7 +12,7 @@ import math
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import Quaternion, Twist, TransformStamped
 from std_msgs.msg import Int8MultiArray
-from tf.transformations import quaternion_from_euler, qaternion_multiply
+from tf.transformations import quaternion_from_euler
 import tf2_ros
 from sensor_msgs.msg import JointState
 import threading
@@ -140,9 +140,7 @@ def main():
         th += delta_th
 
         # Calculate the quaternion from the parameters:
-        flip_quat = quaternion_from_euler(0, 0, math.pi)
         odom_quat = quaternion_from_euler(0, 0, th)
-        odom_quat = quaternion_multiply(odom_quat, flip_quat)
 
         # Define the transformation:
         t = TransformStamped()
