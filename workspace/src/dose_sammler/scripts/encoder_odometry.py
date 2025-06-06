@@ -140,9 +140,9 @@ def main():
         th += delta_th
 
         # Calculate the quaternion from the parameters:
-        #flip_quat = quaternion_from_euler(0, 0, math.pi)
+        flip_quat = quaternion_from_euler(0, 0, math.pi)
         odom_quat = quaternion_from_euler(0, 0, th)
-        #odom_quat = quaternion_multiply(odom_quat, flip_quat)
+        odom_quat = quaternion_multiply(odom_quat, flip_quat)
 
         # Define the transformation:
         t = TransformStamped()
