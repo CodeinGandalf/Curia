@@ -80,7 +80,7 @@ def key_callback(msg):
         dGripper = GRIPPER_OPEN
     elif key == 'g':
         dGripper = GRIPPER_CLOSED
-    elif key == 'p':
+    elif key == ' ':
         dx = 0
         dy = 0
         drot = 0
